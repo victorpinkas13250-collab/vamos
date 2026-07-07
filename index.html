@@ -360,7 +360,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div style="color:var(--muted)">&#8250;</div>
   </div>
 
-  <footer>Travel Time v1.7.0 &middot; données stockées sur cet appareil</footer>
+  <footer>Travel Time v1.8.0 &middot; données stockées sur cet appareil</footer>
   <button class="fab" id="fab-home" aria-label="Nouveau voyage">+</button>
 </div>
 
@@ -550,6 +550,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <h3>&#127919; Dis-m&rsquo;en plus sur ce voyage</h3>
     <p class="hint" style="margin-top:0">Coche ce que tu vas faire sur place &mdash; j&rsquo;ai d&eacute;j&agrave; pr&eacute;-coch&eacute; en lisant ton itin&eacute;raire et ta destination. D&eacute;coche ce qui te concerne pas (pas de ski = pas de skis dans la liste, promis).</p>
     <div class="chips" id="quiz-chips" style="margin-top:12px"></div>
+    <label>&#128230; Cat&eacute;gories de base (d&eacute;coche ce que tu veux pas)</label>
+    <div class="chips" id="quizcat-chips"></div>
+    <label>&#129666; Ton bagage ?</label>
+    <div class="chips" id="quizbag-chips"></div>
+    <label>&#127976; Tu dors o&ugrave; ?</label>
+    <div class="chips" id="quizheb-chips"></div>
+    <label>&#9878;&#65039; Ton style de valise ?</label>
+    <div class="chips" id="quizstyle-chips"></div>
     <div class="sheet-actions">
       <button class="btn ghost" data-close="ov-quiz">Annuler</button>
       <button class="btn" id="btn-quiz-gen">&#10024; G&eacute;n&eacute;rer la valise</button>
@@ -719,6 +727,32 @@ var ACTS = [
   { id:'taf', l:'\uD83D\uDCBB T\u00E9l\u00E9travail', k:['teletravail','coworking','visio','boulot'], items:['Ordinateur + chargeur','\u00C9cran portable (improbable, productif)','Souris','Casque micro pour les visios','Multiprise sp\u00E9ciale bureau nomade','VPN configur\u00E9 AVANT de partir','Partage de connexion test\u00E9','Adaptateur HDMI','Support ordi pliable','Forfait data \u00E9tranger v\u00E9rifi\u00E9','Carnet + stylos boulot','Bouchons anti-bruit de coworking','Fond de visio neutre rep\u00E9r\u00E9 \uD83D\uDE02'] },
   { id:'camping', l:'\u26FA Camping', k:['camping','bivouac','van'], items:['Tente + sardines COMPT\u00C9ES avant d\u00E9part','Tapis de sol','Sac de couchage adapt\u00E9 \u00E0 la temp\u00E9rature','Matelas gonflable + gonfleur','Oreiller de camp','R\u00E9chaud (cartouche INTERDITE en avion, ach\u00E8te sur place)','Popote + \u00E9ponge','Allumettes \u00E9tanches','Lampe de camp','Batterie solaire (improbable, styl\u00E9)','Moustiquaire de camp','Papier toilette + pelle \uD83D\uDE02','Sacs poubelle camp propre','Corde + b\u00E2che multi-usage','Chaise pliante d\u2019ap\u00E9ro (priorit\u00E9s)','Bidon d\u2019eau 5L'] }
 ];
+var BASE_PACKS = [
+  ['papiers','\uD83E\uDEAA Papiers & argent'],
+  ['electronique','\uD83D\uDD0C \u00C9lectronique'],
+  ['toilette','\uD83E\uDDF4 Toilette'],
+  ['pharmacie','\uD83D\uDC8A Pharmacie'],
+  ['vetements','\uD83D\uDC55 V\u00EAtements'],
+  ['transport','\uD83D\uDECB\uFE0F Trajet & confort'],
+  ['divers','\uD83E\uDDF0 Malin & divers'],
+  ['apero','\uD83C\uDF56 Ap\u00E9ro & gourmand']
+];
+var QBAG = [ ['cabine','\uD83C\uDF92 Cabine seulement'], ['soute','\uD83E\uDDF3 Valise en soute'], ['voiture','\uD83D\uDE97 Coffre de voiture'] ];
+var QHEB = [ ['hotel','\uD83C\uDFE8 H\u00F4tel'], ['location','\uD83C\uDFE0 Location / Airbnb'], ['autre','\u26FA Autre'] ];
+var QSTYLE = [ ['mini','\uD83E\uDEB6 Minimaliste'], ['equilibre','\u2696\uFE0F \u00C9quilibr\u00E9'], ['prevoyant','\uD83E\uDDF0 Pr\u00E9voyant (tout !)'] ];
+var HOTEL_DROPS = ['s\u00E8che-cheveux','corde \u00E0 linge','pinces \u00E0 linge','papier toilette de secours','\u00E9ponge coup\u00E9e'];
+function quizFilter(t, lbl, cat){
+  var l = lbl.toLowerCase();
+  if(t.qbag === 'cabine' && l.indexOf('soute') !== -1) return false;
+  if(t.qheb === 'hotel'){
+    for(var i=0;i<HOTEL_DROPS.length;i++) if(l.indexOf(HOTEL_DROPS[i]) !== -1) return false;
+  }
+  if(t.qstyle === 'mini'){
+    if(l.indexOf('improbable') !== -1) return false;
+    if(cat !== BASE_PACKS[0][1] && (l.indexOf('rechange') !== -1 || l.indexOf('deuxi\u00E8me') !== -1 || l.indexOf('de secours') !== -1 || l.indexOf('x2') !== -1)) return false;
+  }
+  return true;
+}
 var VALISE = {
   papiers: ['Carte d’identité / passeport','Permis de conduire','Carte européenne d’assurance maladie','Billets de transport (aller ET retour)','Confirmations d’hébergement','Assurance voyage (n° de contrat noté)','Photocopies des papiers (rangées à part)','Papiers scannés dans le Coffre de l’app 😏','Photos d’identité de secours','CB principale','CB de secours (autre banque)','Espèces en euros','Devises locales (un peu, le reste sur place)','Petite monnaie (toilettes, pourboires)','Portefeuille de voyage (pas celui de tous les jours)','Pochette tour de cou pour papiers','Numéros d’opposition CB notés sur papier','Cartes de réduction (étudiant, famille…)','Carte de fidélité compagnie / hôtel','Justificatif de domicile (location de voiture)','Attestation mutuelle / assistance','Contact de l’ambassade noté quelque part'],
   electronique: ['Téléphone (oui, ça arrive de l’oublier)','Chargeur téléphone','Câble de rechange','Batterie externe','Deuxième batterie externe (les photos, ça pompe)','Multiprise (1 seule prise à l’hôtel, toujours)','Rallonge courte','Adaptateur universel','Écouteurs filaires (pour l’avion)','Casque / écouteurs bluetooth','Chargeur de la montre connectée (LE grand oublié)','Montre connectée','Liseuse','Chargeur de liseuse','Tablette pour le trajet','Appareil photo','Batterie d’appareil photo chargée','Carte SD de rechange','Perche à selfie / mini trépied','Caméra type GoPro + fixations','Clé USB (partager les photos)','Lampe de poche','Chargeur allume-cigare','Support téléphone voiture','Câble long 2 m (prise loin du lit)','Piles de rechange','AirTag / traceur dans la valise','Films et séries téléchargés AVANT de partir'],
@@ -865,16 +899,9 @@ function applyValise(climate, why){
   if(!types.length){ types.push('ville'); auto.push('\uD83C\uDFD9\uFE0F mode ville'); }
   var CLIM_CAT = { chaud:'\u2600\uFE0F Sp\u00E9cial chaud', doux:'\uD83C\uDF24\uFE0F Mi-saison', froid:'\uD83E\uDDE3 Sp\u00E9cial froid', glacial:'\u2744\uFE0F Grand froid' };
   var TYPE_CAT = { plage:'\uD83C\uDFD6\uFE0F Plage', ville:'\uD83C\uDFD9\uFE0F Ville', montagne:'\uD83C\uDFD4\uFE0F Montagne' };
-  var packs = [
-    ['\uD83E\uDEAA Papiers & argent', VALISE.papiers],
-    ['\uD83D\uDD0C \u00C9lectronique', VALISE.electronique],
-    ['\uD83E\uDDF4 Toilette', VALISE.toilette],
-    ['\uD83D\uDC8A Pharmacie', VALISE.pharmacie],
-    ['\uD83D\uDC55 V\u00EAtements', VALISE.vetements],
-    ['\uD83D\uDECB\uFE0F Trajet & confort', VALISE.transport],
-    ['\uD83E\uDDF0 Malin & divers', VALISE.divers],
-    ['\uD83C\uDF56 Ap\u00E9ro & gourmand', VALISE.apero]
-  ];
+  var inc = t.qcats || BASE_PACKS.map(function(p){ return p[0]; });
+  var packs = [];
+  BASE_PACKS.forEach(function(p){ if(inc.indexOf(p[0]) !== -1) packs.push([p[1], VALISE[p[0]]]); });
   if(climate === 'glacial') packs.push([CLIM_CAT.froid, VALISE.froid]);
   packs.push([CLIM_CAT[climate], VALISE[climate] || []]);
   types.forEach(function(ty){ packs.push([TYPE_CAT[ty], VALISE[ty] || []]); });
@@ -885,7 +912,7 @@ function applyValise(climate, why){
   var added = 0;
   packs.forEach(function(pk){
     pk[1].forEach(function(it){
-      if(existing.indexOf(it.toLowerCase()) === -1){
+      if(quizFilter(t, it, pk[0]) && existing.indexOf(it.toLowerCase()) === -1){
         t.checklist.push({ id: uid(), lbl: it, done: false, cat: pk[0] });
         existing.push(it.toLowerCase());
         added++;
@@ -913,7 +940,34 @@ function detectActs(t){
   if((t.types||[]).indexOf('plage') !== -1 && found.indexOf('baignade') === -1) found.push('baignade');
   return found;
 }
-var quizActs = [];
+var quizActs = [], quizCats = [], quizBag = 'soute', quizHeb = 'hotel', quizStyle = 'equilibre';
+function buildToggleChips(rowId, options, getSel, setSel, single){
+  var row = $(rowId); row.innerHTML = '';
+  options.forEach(function(o){
+    var b = document.createElement('button');
+    b.type = 'button';
+    var sel = getSel();
+    var on = single ? (sel === o[0]) : (sel.indexOf(o[0]) !== -1);
+    b.className = 'chip' + (on ? ' on' : '');
+    b.textContent = o[1];
+    b.addEventListener('click', function(){
+      if(single) setSel(o[0]);
+      else {
+        var arr = getSel();
+        var ix = arr.indexOf(o[0]);
+        if(ix === -1) arr.push(o[0]); else arr.splice(ix,1);
+      }
+      buildToggleChips(rowId, options, getSel, setSel, single);
+    });
+    row.appendChild(b);
+  });
+}
+function buildQuizExtras(){
+  buildToggleChips('quizcat-chips', BASE_PACKS, function(){ return quizCats; }, null, false);
+  buildToggleChips('quizbag-chips', QBAG, function(){ return quizBag; }, function(v){ quizBag = v; }, true);
+  buildToggleChips('quizheb-chips', QHEB, function(){ return quizHeb; }, function(v){ quizHeb = v; }, true);
+  buildToggleChips('quizstyle-chips', QSTYLE, function(){ return quizStyle; }, function(v){ quizStyle = v; }, true);
+}
 function buildQuizChips(){
   var row = $('quiz-chips'); row.innerHTML = '';
   ACTS.forEach(function(a){
@@ -932,12 +986,19 @@ function buildQuizChips(){
 function smartValise(){
   var t = getTrip(currentTripId);
   quizActs = (t.acts && t.acts.length) ? t.acts.slice() : detectActs(t);
+  quizCats = t.qcats ? t.qcats.slice() : BASE_PACKS.map(function(p){ return p[0]; });
+  quizBag = t.qbag || (( t.transport||[]).indexOf('voiture') !== -1 ? 'voiture' : 'soute');
+  quizHeb = t.qheb || 'hotel';
+  quizStyle = t.qstyle || 'equilibre';
   buildQuizChips();
+  buildQuizExtras();
   openSheet('ov-quiz');
 }
 function generateAfterQuiz(){
   var t = getTrip(currentTripId);
   t.acts = quizActs.slice();
+  t.qcats = quizCats.slice();
+  t.qbag = quizBag; t.qheb = quizHeb; t.qstyle = quizStyle;
   saveState().then(function(){
     closeSheet('ov-quiz');
     var c = climateFor(t);
