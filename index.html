@@ -189,6 +189,13 @@ footer{margin-top:32px;text-align:center;color:var(--muted);font-size:11px}
 .step-who{display:inline-flex;align-items:center;gap:5px;margin-top:4px;font-size:11.5px;color:var(--muted)}
 .step-who .dot{width:9px;height:9px;border-radius:50%}
 .step .del{background:none;border:none;color:#B7C9CF;font-size:15px;cursor:pointer;padding:2px}
+.doclinks{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.doclink{
+  display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;
+  background:rgba(38,172,166,.10);border:1.5px solid rgba(38,172,166,.35);
+  font-size:11.5px;font-weight:700;color:var(--teal);cursor:pointer;
+  max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 .add-step{
   width:calc(100% - 20px);margin-left:20px;padding:10px;border:2px dashed var(--line);border-radius:13px;
   background:none;color:var(--muted);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
@@ -308,6 +315,21 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .toast.on{display:block;animation:fadeUp .2s ease}
 .menu-list{display:flex;flex-direction:column;gap:9px;margin-top:4px}
 .menu-list .btn{justify-content:flex-start}
+.info-card{background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:14px}
+.info-card h4{font-family:'Baloo 2',sans-serif;font-size:15px;margin-bottom:8px}
+.info-row{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--bg);font-size:13.5px}
+.info-row:last-child{border-bottom:none}
+.info-row .il{color:var(--muted);min-width:96px;font-weight:600;flex-shrink:0}
+.info-row .iv{flex:1;font-weight:500}
+.info-list{margin:4px 0 0;padding-left:2px;list-style:none;font-size:13.5px}
+.info-list li{padding:5px 0 5px 22px;position:relative}
+.info-list li::before{content:'\2713';position:absolute;left:2px;color:var(--teal);font-weight:800}
+.link-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.link-row a{
+  display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:11px;
+  background:var(--bg);border:1.5px solid var(--line);color:var(--blue);
+  font-size:13px;font-weight:700;text-decoration:none;
+}
 </style>
 </head>
 <body>
@@ -338,7 +360,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div style="color:var(--muted)">&#8250;</div>
   </div>
 
-  <footer>Travel Time v1.1.1 &middot; données stockées sur cet appareil</footer>
+  <footer>Travel Time v1.5.0 &middot; données stockées sur cet appareil</footer>
   <button class="fab" id="fab-home" aria-label="Nouveau voyage">+</button>
 </div>
 
@@ -354,9 +376,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div class="countdown" id="trip-countdown"></div>
 
   <div class="tabs">
-    <button class="tab on" data-tab="iti">&#128506; Itinéraire</button>
+    <button class="tab on" data-tab="iti">&#128506; Iti</button>
     <button class="tab" data-tab="docs">&#127915; Docs</button>
     <button class="tab" data-tab="valise">&#129508; Valise</button>
+    <button class="tab" data-tab="infos">&#129517; Infos</button>
   </div>
 
   <div class="tabpane on" id="pane-iti"></div>
@@ -372,8 +395,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <input type="text" id="check-input" placeholder="Ex : chargeur, maillot…" maxlength="60">
       <button class="btn small" id="btn-addcheck">+</button>
     </div>
-    <button class="add-step" id="btn-preset" style="margin:10px 0 0;width:100%">&#10024; Ajouter les indispensables</button>
+    <button class="add-step" id="btn-preset" style="margin:10px 0 0;width:100%">&#10024; Liste adapt&eacute;e au voyage</button>
   </div>
+
+  <div class="tabpane" id="pane-infos"></div>
 </div>
 
 <!-- ============ COFFRE ============ -->
@@ -394,8 +419,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <h3 id="trip-form-title">Nouveau voyage</h3>
     <label for="f-name">Nom du voyage</label>
     <input type="text" id="f-name" placeholder="Ex : Milan entre potes" maxlength="50">
-    <label for="f-dest">Destination</label>
-    <input type="text" id="f-dest" placeholder="Ex : Milan, Italie" maxlength="60">
+    <label for="f-dest">Ville / destination</label>
+    <input type="text" id="f-dest" placeholder="Ex : Milan" maxlength="60">
+    <label for="f-country">Pays</label>
+    <input type="text" id="f-country" placeholder="Ex : Italie" maxlength="40">
+    <label>Type de s&eacute;jour (pour adapter la valise)</label>
+    <div class="chips" id="triptype-chips"></div>
+    <label>Comment tu y vas ?</label>
+    <div class="chips" id="transport-chips"></div>
     <label>Emoji</label>
     <div class="emoji-row" id="emoji-row"></div>
     <div class="row2">
@@ -440,6 +471,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <option value="identite">&#129706; Identité</option>
       <option value="autre">&#128196; Autre</option>
     </select>
+    <div id="doc-link-block" style="display:none">
+      <label for="f-docday">&#128506;&#65039; Cr&eacute;er l&rsquo;&eacute;tape dans l&rsquo;itin&eacute;raire ?</label>
+      <select id="f-docday"></select>
+      <label for="f-doctime">Heure du billet (optionnel)</label>
+      <input type="time" id="f-doctime">
+    </div>
     <div class="sheet-actions">
       <button class="btn ghost" data-close="ov-doc">Annuler</button>
       <button class="btn" id="btn-save-doc">Enregistrer</button>
@@ -480,6 +517,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <label>Qui s'en occupe ? (optionnel)</label>
       <div class="chips" id="who-chips"></div>
     </div>
+    <div id="stepdoc-block" style="display:none">
+      <label>&#127915; Billets / docs li&eacute;s (un par personne si besoin)</label>
+      <div class="chips" id="stepdoc-chips"></div>
+    </div>
     <div class="sheet-actions">
       <button class="btn ghost" data-close="ov-step">Annuler</button>
       <button class="btn" id="btn-save-step">Enregistrer</button>
@@ -499,6 +540,21 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
     <p class="hint">La sauvegarde contient tout : voyages, voyageurs, itinéraires, checklists et documents. Garde-la précieusement (Drive, clé USB…), c'est ta ceinture de sécurité si tu changes de téléphone.</p>
     <div class="sheet-actions"><button class="btn ghost full" data-close="ov-menu">Fermer</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="ov-climat">
+  <div class="sheet">
+    <div class="grip"></div>
+    <h3>&#127777;&#65039; Quel temps l&agrave;-bas ?</h3>
+    <p class="hint" style="margin-top:0">Je ne connais pas encore cette destination &mdash; dis-moi le climat sur place pour adapter ta valise :</p>
+    <div class="chips" style="margin-top:12px">
+      <button class="chip" data-climat="chaud">&#9728;&#65039; Chaud</button>
+      <button class="chip" data-climat="doux">&#127782;&#65039; Doux</button>
+      <button class="chip" data-climat="froid">&#129507; Froid</button>
+      <button class="chip" data-climat="glacial">&#10052;&#65039; Glacial</button>
+    </div>
+    <div class="sheet-actions"><button class="btn ghost full" data-close="ov-climat">Annuler</button></div>
   </div>
 </div>
 
@@ -524,7 +580,11 @@ var stepDay = null;              // jour cible pour l'étape
 var editingStepId = null;        // null = création
 var stepType = '';               // emoji du type choisi
 var stepWho = null;              // id du voyageur assigné
+var stepDocs = [];               // ids des docs liés à l'étape
+var CAT_STEP = { transport:'\uD83D\uDE86', hebergement:'\uD83C\uDFE8', activite:'\uD83C\uDF9F\uFE0F', identite:'\uD83E\uDEAA', autre:'\uD83D\uDCC4' };
 var chosenEmoji = '\u2708\uFE0F';
+var chosenTypes = [];
+var chosenTransport = [];
 
 var EMOJIS = ['\u2708\uFE0F','\uD83C\uDFD6\uFE0F','\uD83C\uDFD4\uFE0F','\uD83C\uDDEE\uD83C\uDDF9','\uD83C\uDF0B','\uD83C\uDFC9','\uD83C\uDF7B','\uD83D\uDE97','\uD83D\uDEF3\uFE0F','\uD83C\uDF83'];
 var AV_COLORS = ['#26ACA6','#3D8FD1','#FF8A5C','#F2B705','#9B5DE5','#EF476F','#06A77D','#5C7AEA'];
@@ -553,7 +613,87 @@ var CATS = {
   identite:    { ico:'\uD83E\uDEAA', lbl:'Identit\u00E9' },
   autre:       { ico:'\uD83D\uDCC4', lbl:'Autre' }
 };
-var PRESET_VALISE = ['Carte d\u2019identit\u00E9 / passeport','Chargeur + c\u00E2ble','Batterie externe','Trousse de toilette','M\u00E9dicaments','Lunettes de soleil','Adaptateur prise','Bouteille d\u2019eau'];
+var TRIP_TYPES = [
+  { id:'plage',    l:'\uD83C\uDFD6\uFE0F Plage' },
+  { id:'ville',    l:'\uD83C\uDFD9\uFE0F Ville' },
+  { id:'montagne', l:'\uD83C\uDFD4\uFE0F Montagne' }
+];
+/* Table destinations -> zone climatique + h\u00E9misph\u00E8re (hors ligne) */
+var DESTS = [
+  { k:['espagne','barcelone','madrid','seville','canaries','baleares','majorque','ibiza'], n:'Espagne', z:'med', h:'N', d:'CNI ou passeport', m:'Euro (\u20AC)', lg:'espagnol', c:'D', p:'EU', e:'112', w:true },
+  { k:['portugal','lisbonne','porto','algarve','madere'], n:'Portugal', z:'med', h:'N', d:'CNI ou passeport', m:'Euro (\u20AC)', lg:'portugais', c:'D', p:'EU', e:'112', w:true },
+  { k:['italie','rome','milan','venise','naples','sicile','sardaigne','toscane'], n:'Italie', z:'med', h:'N', d:'CNI ou passeport', m:'Euro (\u20AC)', lg:'italien', c:'D', p:'EU', e:'112', w:true },
+  { k:['grece','athenes','santorin','crete','mykonos','corfou'], n:'Gr\u00E8ce', z:'med', h:'N', d:'CNI ou passeport', m:'Euro (\u20AC)', lg:'grec', c:'D', p:'EU', e:'112', w:true },
+  { k:['croatie','dubrovnik','split'], n:'Croatie', z:'med', h:'N', d:'CNI ou passeport', m:'Euro (\u20AC)', lg:'croate', c:'D', p:'EU', e:'112', w:true },
+  { k:['malte'], n:'Malte', z:'med', h:'N', d:'CNI ou passeport', m:'Euro (\u20AC)', lg:'anglais / maltais', c:'G', p:'UK (adaptateur !)', e:'112', w:true },
+  { k:['turquie','istanbul','antalya'], n:'Turquie', z:'med', h:'N', d:'CNI ou passeport (tourisme)', m:'Livre turque (\u20BA)', lg:'turc', c:'D', p:'EU', e:'112', w:false },
+  { k:['maroc','marrakech','agadir','essaouira'], n:'Maroc', z:'med', h:'N', d:'Passeport', m:'Dirham (MAD)', lg:'arabe / fran\u00E7ais', c:'D', p:'EU', e:'19 (police) / 15 (SAMU)', w:false },
+  { k:['tunisie','djerba','tunis'], n:'Tunisie', z:'med', h:'N', d:'Passeport (CNI si voyage organis\u00E9)', m:'Dinar (TND)', lg:'arabe / fran\u00E7ais', c:'D', p:'EU', e:'197 / 190', w:false },
+  { k:['egypte','le caire','hurghada','charm'], n:'\u00C9gypte', z:'desert', h:'N', d:'Passeport + visa (\u00E0 l\u2019arriv\u00E9e, ~25$)', m:'Livre \u00E9gyptienne (EGP)', lg:'arabe', c:'D', p:'EU', e:'122', w:false },
+  { k:['dubai','emirats','abu dhabi','qatar','doha','oman'], n:'Golfe', z:'desert', h:'N', d:'Passeport (validit\u00E9 6 mois)', m:'Dirham (AED) / Riyal', lg:'arabe / anglais', c:'D', p:'UK (adaptateur !)', e:'999', w:true },
+  { k:['thailande','bangkok','phuket','koh'], n:'Tha\u00EFlande', z:'tropical', h:'N', d:'Passeport (validit\u00E9 6 mois)', m:'Baht (THB)', lg:'tha\u00EF', c:'G', p:'US/EU', e:'191', w:false },
+  { k:['vietnam','hanoi'], n:'Vietnam', z:'tropical', h:'N', d:'Passeport + e-visa', m:'Dong (VND)', lg:'vietnamien', c:'D', p:'EU/US', e:'113', w:false },
+  { k:['indonesie','bali','java'], n:'Indon\u00E9sie', z:'tropical', h:'S', d:'Passeport + visa \u00E0 l\u2019arriv\u00E9e (~35$)', m:'Roupie (IDR)', lg:'indon\u00E9sien', c:'G', p:'EU', e:'112', w:false },
+  { k:['inde','sri lanka','maldives'], n:'Oc\u00E9an Indien', z:'tropical', h:'N', d:'Passeport + e-visa selon pays', m:'Roupies', lg:'selon pays', c:'G', p:'UK/EU', e:'112', w:false },
+  { k:['mexique','cancun','tulum'], n:'Mexique', z:'tropical', h:'N', d:'Passeport', m:'Peso (MXN)', lg:'espagnol', c:'D', p:'US (adaptateur !)', e:'911', w:false },
+  { k:['cuba','republique dominicaine','punta cana','jamaique','bahamas'], n:'Cara\u00EFbes', z:'tropical', h:'N', d:'Passeport (+ carte touristique selon pays)', m:'Selon pays', lg:'espagnol / anglais', c:'D', p:'US (adaptateur !)', e:'911', w:false },
+  { k:['martinique','guadeloupe','guyane'], n:'Antilles fran\u00E7aises', z:'tropical', h:'N', d:'CNI (c\u2019est la France !)', m:'Euro (\u20AC)', lg:'fran\u00E7ais', c:'D', p:'EU', e:'112', w:true },
+  { k:['reunion','maurice','seychelles','zanzibar'], n:'Oc\u00E9an Indien', z:'tropical', h:'S', d:'CNI (R\u00E9union) / passeport ailleurs', m:'Euro / roupie', lg:'fran\u00E7ais / anglais', c:'D (R\u00E9union) / G (Maurice)', p:'EU / UK', e:'112 / 999', w:true },
+  { k:['senegal','cote d ivoire','kenya','tanzanie'], n:'Afrique', z:'tropical', h:'N', d:'Passeport (+ e-visa selon pays)', m:'Franc CFA / shilling', lg:'fran\u00E7ais / anglais', c:'D ou G selon pays', p:'EU/UK', e:'112 / 999', w:false },
+  { k:['bresil','rio','colombie','costa rica','panama'], n:'Am\u00E9rique tropicale', z:'tropical', h:'S', d:'Passeport', m:'R\u00E9al / peso', lg:'portugais / espagnol', c:'D', p:'US/EU', e:'190 / 911', w:false },
+  { k:['france','paris','lyon','bordeaux','bretagne','corse','nice','marseille','montpellier'], n:'France', z:'temperate', h:'N', d:'CNI', m:'Euro (\u20AC)', lg:'fran\u00E7ais', c:'D', p:'EU', e:'112', w:true },
+  { k:['royaume uni','angleterre','londres','ecosse','edimbourg','irlande','dublin'], n:'\u00CEles britanniques', z:'temperate', h:'N', d:'Passeport (UK) / CNI (Irlande)', m:'Livre (\u00A3) / Euro (Irlande)', lg:'anglais', c:'G !', p:'UK (adaptateur !)', e:'999 / 112', w:true },
+  { k:['belgique','bruxelles','pays bas','amsterdam','luxembourg'], n:'Benelux', z:'temperate', h:'N', d:'CNI', m:'Euro (\u20AC)', lg:'fran\u00E7ais / n\u00E9erlandais', c:'D', p:'EU', e:'112', w:true },
+  { k:['allemagne','berlin','munich','suisse','geneve','zurich','autriche','vienne'], n:'Europe centrale', z:'temperate', h:'N', d:'CNI', m:'Euro (Franc suisse en CH)', lg:'allemand', c:'D', p:'EU (Suisse : type J !)', e:'112', w:true },
+  { k:['pologne','cracovie','varsovie','tchequie','prague','hongrie','budapest','roumanie'], n:'Europe de l\u2019Est', z:'continental', h:'N', d:'CNI', m:'Zloty / couronne / forint (pas d\u2019\u20AC partout !)', lg:'selon pays', c:'D', p:'EU', e:'112', w:true },
+  { k:['japon','tokyo','kyoto','coree','seoul','chine','pekin','shanghai'], n:'Asie de l\u2019Est', z:'temperate', h:'N', d:'Passeport (Chine : visa !)', m:'Yen / won / yuan', lg:'selon pays', c:'G (Japon) / D ailleurs', p:'US (adaptateur !)', e:'110 / 119', w:true },
+  { k:['etats unis','usa','new york','miami','los angeles','san francisco'], n:'\u00C9tats-Unis', z:'temperate', h:'N', d:'Passeport + ESTA (en ligne, ~21$, 72h avant)', m:'Dollar ($)', lg:'anglais', c:'D', p:'US (adaptateur !)', e:'911', w:true },
+  { k:['canada','montreal','quebec','toronto','vancouver'], n:'Canada', z:'continental', h:'N', d:'Passeport + AVE (en ligne, 7 CAD)', m:'Dollar canadien (CAD)', lg:'fran\u00E7ais / anglais', c:'D', p:'US (adaptateur !)', e:'911', w:true },
+  { k:['russie','moscou'], n:'Russie', z:'continental', h:'N', d:'Passeport + visa', m:'Rouble (RUB)', lg:'russe', c:'D', p:'EU', e:'112', w:false },
+  { k:['argentine','buenos aires','chili','uruguay'], n:'C\u00F4ne Sud', z:'temperate', h:'S', d:'Passeport', m:'Peso', lg:'espagnol', c:'D', p:'EU/US (adaptateur !)', e:'911', w:true },
+  { k:['perou','bolivie','equateur'], n:'Andes', z:'tropical', h:'S', d:'Passeport', m:'Sol / boliviano', lg:'espagnol', c:'D', p:'US/EU', e:'105 / 911', w:false },
+  { k:['afrique du sud','le cap','johannesburg','namibie'], n:'Afrique australe', z:'temperate', h:'S', d:'Passeport (validit\u00E9 30 jours apr\u00E8s retour)', m:'Rand (ZAR)', lg:'anglais', c:'G !', p:'Type M (adaptateur sp\u00E9cifique !)', e:'10111', w:true },
+  { k:['australie','sydney','melbourne'], n:'Australie', z:'temperate', h:'S', d:'Passeport + eVisitor (gratuit, en ligne)', m:'Dollar australien (AUD)', lg:'anglais', c:'G !', p:'Type I (adaptateur !)', e:'000', w:true },
+  { k:['nouvelle zelande','auckland'], n:'Nouvelle-Z\u00E9lande', z:'temperate', h:'S', d:'Passeport + NZeTA (en ligne)', m:'Dollar n\u00E9o-z\u00E9landais (NZD)', lg:'anglais', c:'G !', p:'Type I (adaptateur !)', e:'111', w:true },
+  { k:['norvege','oslo','suede','stockholm','finlande','helsinki','laponie','danemark','copenhague'], n:'Scandinavie', z:'cold', h:'N', d:'CNI ou passeport', m:'Couronnes (pas d\u2019\u20AC !)', lg:'anglais courant', c:'D', p:'EU', e:'112', w:true },
+  { k:['islande','reykjavik'], n:'Islande', z:'arctic', h:'N', d:'CNI ou passeport', m:'Couronne (ISK)', lg:'islandais / anglais', c:'D', p:'EU', e:'112', w:true },
+  { k:['groenland','alaska','svalbard'], n:'Grand Nord', z:'arctic', h:'N', d:'Passeport', m:'Couronne danoise / dollar', lg:'danois / anglais', c:'D', p:'EU/US', e:'112 / 911', w:true }
+];
+var MOIS_FR = ['janvier','f\u00E9vrier','mars','avril','mai','juin','juillet','ao\u00FBt','septembre','octobre','novembre','d\u00E9cembre'];
+var CLIMAT_LBL = { chaud:'\u2600\uFE0F chaud', doux:'\uD83C\uDF24\uFE0F doux', froid:'\uD83E\uDDE3 froid', glacial:'\u2744\uFE0F glacial' };
+var TRANSPORTS = [
+  { id:'avion',   l:'\u2708\uFE0F Avion' },
+  { id:'voiture', l:'\uD83D\uDE97 Voiture' },
+  { id:'train',   l:'\uD83D\uDE86 Train' },
+  { id:'ferry',   l:'\u26F4\uFE0F Ferry' }
+];
+var GENERIC_CAR = ['Permis de conduire (+ permis international hors UE)','Carte grise + attestation d\u2019assurance','Constat amiable','Gilet r\u00E9fl\u00E9chissant + triangle','Chargeur voiture + support t\u00E9l\u00E9phone'];
+var CAR_RULES = {
+  'Espagne': ['Balise lumineuse V16 connect\u00E9e (obligatoire en Espagne, remplace le triangle)','P\u00E9ages : pr\u00E9voir CB'],
+  'Italie': ['Gilet obligatoire hors agglom\u00E9ration','ZTL : zones \u00E0 trafic limit\u00E9 dans les centres-villes (amendes auto !)'],
+  'Portugal': ['P\u00E9ages \u00E9lectroniques sans barri\u00E8re (Via Verde / easytoll)'],
+  'Europe centrale': ['Vignette autoroute obligatoire (Suisse ~40 CHF, Autriche)','Kit premiers secours obligatoire (Allemagne)','Vignette environnementale pour les villes allemandes'],
+  'France': ['\u00C9thylotest recommand\u00E9','Vignette Crit\u2019Air pour certaines grandes villes'],
+  'Croatie': ['Feux de croisement allum\u00E9s en hiver'],
+  'Scandinavie': ['Feux allum\u00E9s jour et nuit obligatoires','Pneus hiver obligatoires en saison'],
+  '\u00CEles britanniques': ['CONDUITE \u00C0 GAUCHE !','Autocollant UK + d\u00E9flecteurs de phares','P\u00E9age urbain \u00E0 Londres (ULEZ/Congestion charge)'],
+  'Europe de l\u2019Est': ['Vignette autoroute selon pays (Tch\u00E9quie, Hongrie\u2026)']
+};
+var BUDGET_ZONE = { med:85, temperate:110, continental:80, tropical:65, desert:130, cold:140, arctic:170 };
+var BUDGET_OVR = { '\u00C9tats-Unis':170, 'Golfe':140, 'Islande':160, 'Asie de l\u2019Est':120, 'Cara\u00EFbes':115, 'Antilles fran\u00E7aises':110, 'Tha\u00EFlande':50, 'Indon\u00E9sie':50, 'Vietnam':45, 'Oc\u00E9an Indien':90, 'Europe de l\u2019Est':65, 'Maroc':55, 'Tunisie':50, '\u00C9gypte':55 };
+var AIR_ITEMS = ['V\u00E9rifier la validit\u00E9 du passeport / CNI','Billets + cartes d\u2019embarquement t\u00E9l\u00E9charg\u00E9s','Liquides en cabine : max 100 ml par flacon','Batterie externe EN CABINE (interdite en soute !)','Arriver 2h avant (3h pour les longs courriers)'];
+var TRAIN_ITEMS = ['Billets t\u00E9l\u00E9charg\u00E9s en mode hors ligne','Pi\u00E8ce d\u2019identit\u00E9 sur soi'];
+var FERRY_ITEMS = ['Billets ferry t\u00E9l\u00E9charg\u00E9s','Arriver 1h avant (2h avec v\u00E9hicule)','M\u00E9dicament mal de mer (au cas o\u00F9)'];
+var VALISE = {
+  base: ['Carte d\u2019identit\u00E9 / passeport','Chargeur + c\u00E2ble','Batterie externe','Trousse de toilette','M\u00E9dicaments','\u00C9couteurs','Adaptateur de prise (si besoin)'],
+  chaud: ['Cr\u00E8me solaire','Lunettes de soleil','Casquette ou chapeau','V\u00EAtements l\u00E9gers','Anti-moustique','Tongs ou sandales','Gourde ou bouteille d\u2019eau'],
+  doux: ['Veste l\u00E9g\u00E8re','K-way ou parapluie','Pull ou sweat','Lunettes de soleil','Chaussures confortables'],
+  froid: ['Manteau chaud','Bonnet + gants + \u00E9charpe','Pulls (superposition)','Chaussettes chaudes','Baume \u00E0 l\u00E8vres'],
+  glacial: ['Doudoune grand froid','Sous-v\u00EAtements thermiques','Bonnet + gants + \u00E9charpe','Chaussettes en laine (x2)','Chaussures imperm\u00E9ables fourr\u00E9es','Chaufferettes pour les mains','Baume \u00E0 l\u00E8vres','Cr\u00E8me hydratante visage'],
+  plage: ['Maillot de bain','Serviette de plage','Cr\u00E8me solaire','Tongs ou sandales','Sac \u00E9tanche pour le t\u00E9l\u00E9phone'],
+  ville: ['Chaussures confortables','Petit sac \u00E0 dos ou banane','Une tenue un peu habill\u00E9e'],
+  montagne: ['Chaussures de rando','Sac \u00E0 dos de journ\u00E9e','Gourde','K-way ou parapluie','Cr\u00E8me solaire (\u00E7a tape en altitude !)','Casquette ou chapeau']
+};
 
 /* ---------- IndexedDB ---------- */
 function openDB(){
@@ -580,8 +720,8 @@ function saveState(){ return idb('state','readwrite',function(s){ return s.put(s
 function loadState(){
   return idb('state','readonly',function(s){ return s.get('app'); }).then(function(v){
     if(v && v.trips) state = v;
-    // migration : voyageurs
-    state.trips.forEach(function(t){ if(!t.people) t.people = []; });
+    // migration : voyageurs + types de s\u00E9jour
+    state.trips.forEach(function(t){ if(!t.people) t.people = []; if(!t.types) t.types = []; if(!t.transport) t.transport = []; });
   });
 }
 function putDoc(doc){ return idb('docs','readwrite',function(s){ return s.put(doc); }); }
@@ -632,6 +772,60 @@ function closeSheet(id){
 function getTrip(id){
   for(var i=0;i<state.trips.length;i++) if(state.trips[i].id===id) return state.trips[i];
   return null;
+}
+
+/* ---------- Climat & valise intelligente ---------- */
+function normTxt(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-']/g,' ');
+}
+function findDest(t){
+  var txt = ' ' + normTxt((t.dest||'') + ' ' + (t.country||'')) + ' ';
+  for(var i=0;i<DESTS.length;i++){
+    for(var j=0;j<DESTS[i].k.length;j++){
+      if(txt.indexOf(DESTS[i].k[j]) !== -1) return DESTS[i];
+    }
+  }
+  return null;
+}
+function climateFor(t){
+  var d = findDest(t);
+  if(!d || !t.start) return null;
+  var month = parseInt(t.start.slice(5,7), 10); // 1-12
+  var summer = d.h === 'N' ? (month >= 6 && month <= 8) : (month === 12 || month <= 2);
+  var winter = d.h === 'N' ? (month === 12 || month <= 2) : (month >= 6 && month <= 8);
+  var c;
+  if(d.z === 'tropical' || d.z === 'desert') c = 'chaud';
+  else if(d.z === 'med') c = summer ? 'chaud' : 'doux';
+  else if(d.z === 'temperate') c = summer ? 'chaud' : (winter ? 'froid' : 'doux');
+  else if(d.z === 'continental') c = summer ? 'chaud' : (winter ? 'glacial' : 'froid');
+  else if(d.z === 'cold') c = summer ? 'doux' : (winter ? 'glacial' : 'froid');
+  else c = summer ? 'froid' : 'glacial'; // arctic
+  return { climate: c, why: d.n + ' en ' + MOIS_FR[month-1] };
+}
+function applyValise(climate, why){
+  var t = getTrip(currentTripId);
+  if(!t.checklist) t.checklist = [];
+  var items = VALISE.base.concat(VALISE[climate] || []);
+  (t.types || []).forEach(function(ty){ items = items.concat(VALISE[ty] || []); });
+  var existing = t.checklist.map(function(c){ return c.lbl.toLowerCase(); });
+  var added = 0;
+  items.forEach(function(it){
+    if(existing.indexOf(it.toLowerCase()) === -1){
+      t.checklist.push({ id: uid(), lbl: it, done: false });
+      existing.push(it.toLowerCase());
+      added++;
+    }
+  });
+  saveState().then(function(){
+    renderChecklist(t);
+    toast('Valise ' + CLIMAT_LBL[climate] + (why ? ' \u2014 ' + why : '') + ' (' + added + ' ajouts)');
+  });
+}
+function smartValise(){
+  var t = getTrip(currentTripId);
+  var c = climateFor(t);
+  if(c) applyValise(c.climate, c.why);
+  else openSheet('ov-climat');
 }
 
 /* ---------- Navigation ---------- */
@@ -704,7 +898,7 @@ function renderTrip(){
   var t = getTrip(currentTripId);
   if(!t){ show('scr-home'); return; }
   $('trip-title').textContent = t.emoji + ' ' + t.name;
-  $('trip-sub').textContent = (t.dest || '') + (t.start ? ' \u00B7 ' + fmtDate(t.start) + (t.end ? ' \u2192 ' + fmtDate(t.end) : '') : '');
+  $('trip-sub').textContent = (t.dest || '') + (t.country ? ', ' + t.country : '') + (t.start ? ' \u00B7 ' + fmtDate(t.start) + (t.end ? ' \u2192 ' + fmtDate(t.end) : '') : '');
   // voyageurs
   var pr = $('people-row');
   var html = '';
@@ -732,6 +926,7 @@ function renderTrip(){
   renderIti(t);
   renderDocs('trip-docs', t.id);
   renderChecklist(t);
+  renderInfos(t);
 }
 
 function dayList(t){
@@ -747,6 +942,13 @@ function dayList(t){
 }
 
 function renderIti(t){
+  allDocs().then(function(docs){
+    var dmap = {};
+    docs.forEach(function(d){ if(d.tripId === t.id) dmap[d.id] = d; });
+    renderItiInner(t, dmap);
+  });
+}
+function renderItiInner(t, dmap){
   var pane = $('pane-iti'); pane.innerHTML = '';
   if(!t.steps) t.steps = {};
   var days = dayList(t);
@@ -761,10 +963,15 @@ function renderIti(t){
     html += '<div class="day-steps">';
     steps.forEach(function(s){
       var who = personOf(t, s.who);
+      var dl = '';
+      (s.docs || []).forEach(function(did){
+        if(dmap[did]) dl += '<span class="doclink" data-viewdoc="' + did + '">\uD83C\uDF9F\uFE0F ' + esc(dmap[did].nom) + '</span>';
+      });
       html += '<div class="step" data-editstep="' + day + '|' + s.id + '">' +
               '<div class="step-time">' + (s.time || '\u2014') + '</div>' +
               '<div class="step-body"><div class="step-txt">' + (s.type ? s.type + ' ' : '') + esc(s.txt) + '</div>' +
               (who ? '<div class="step-who"><span class="dot" style="background:' + who.color + '"></span>' + esc(who.name) + '</div>' : '') +
+              (dl ? '<div class="doclinks">' + dl + '</div>' : '') +
               '</div>' +
               '<button class="del" data-delstep="' + day + '|' + s.id + '" aria-label="Supprimer">\u2715</button></div>';
     });
@@ -773,6 +980,102 @@ function renderIti(t){
     wrap.innerHTML = html;
     pane.appendChild(wrap);
   });
+  var pdfBtn = document.createElement('button');
+  pdfBtn.className = 'btn ghost full';
+  pdfBtn.dataset.pdf = '1';
+  pdfBtn.style.marginTop = '4px';
+  pdfBtn.textContent = '\uD83D\uDCC4 Partager l\u2019itin\u00E9raire en PDF';
+  pane.appendChild(pdfBtn);
+}
+
+/* ---------- Export PDF de l'itin\u00E9raire ---------- */
+function loadJsPDF(){
+  return new Promise(function(res, rej){
+    if(window.jspdf && window.jspdf.jsPDF){ res(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = function(){ res(); };
+    s.onerror = function(){ rej(new Error('cdn')); };
+    document.head.appendChild(s);
+  });
+}
+function pdfSan(s){
+  return (s||'')
+    .replace(/[\uD800-\uDFFF\uFE0F\u20E3]/g,'')
+    .replace(/[\u2190-\u21FF]/g,'-')
+    .replace(/[\u2300-\u27BF\u2B00-\u2BFF\u2100-\u214F]/g,'')
+    .replace(/\s+/g,' ').trim();
+}
+function exportPdf(){
+  var t = getTrip(currentTripId);
+  var days = dayList(t);
+  if(!days.length){ toast('Ajoute des dates au voyage d\u2019abord \uD83D\uDCC5'); return; }
+  toast('Pr\u00E9paration du PDF\u2026');
+  loadJsPDF().then(function(){
+    var J = window.jspdf.jsPDF;
+    var doc = new J({ unit:'mm', format:'a4' });
+    var W = 210, y;
+    // bandeau
+    doc.setFillColor(38,172,166);
+    doc.rect(0,0,W,32,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold'); doc.setFontSize(21);
+    doc.text(pdfSan(t.name) || 'Mon voyage', 14, 14);
+    doc.setFont('helvetica','normal'); doc.setFontSize(11);
+    var sub = pdfSan((t.dest||'') + (t.country ? ', ' + t.country : ''));
+    if(t.start) sub += (sub ? '  |  ' : '') + fmtDate(t.start) + (t.end ? ' - ' + fmtDate(t.end) : '');
+    doc.text(sub, 14, 22);
+    if(t.people && t.people.length){
+      doc.text(pdfSan('Avec : ' + t.people.map(function(p){ return p.name; }).join(', ')), 14, 28);
+    }
+    y = 42;
+    doc.setTextColor(22,50,60);
+    days.forEach(function(day, i){
+      var steps = (t.steps && t.steps[day] ? t.steps[day] : []).slice().sort(function(a,b){ return (a.time||'99') < (b.time||'99') ? -1 : 1; });
+      if(y > 265){ doc.addPage(); y = 20; }
+      doc.setFont('helvetica','bold'); doc.setFontSize(13);
+      doc.setTextColor(38,172,166);
+      doc.text('Jour ' + (i+1) + '  -  ' + pdfSan(fmtDateLong(day)), 14, y);
+      doc.setDrawColor(220,235,238);
+      doc.line(14, y+2, W-14, y+2);
+      y += 8;
+      doc.setTextColor(22,50,60); doc.setFontSize(11);
+      if(!steps.length){
+        doc.setFont('helvetica','italic');
+        doc.text('Journ\u00E9e libre', 20, y); y += 7;
+      }
+      steps.forEach(function(s){
+        if(y > 275){ doc.addPage(); y = 20; }
+        doc.setFont('helvetica','bold');
+        doc.text(s.time || '--:--', 16, y);
+        doc.setFont('helvetica','normal');
+        var who = personOf(t, s.who);
+        var txt = pdfSan(s.txt) + (who ? '  (' + pdfSan(who.name) + ')' : '');
+        var lines = doc.splitTextToSize(txt, 158);
+        doc.text(lines, 34, y);
+        y += lines.length * 5.4 + 2.2;
+      });
+      y += 4;
+    });
+    // pied de page
+    var pages = doc.getNumberOfPages();
+    for(var p=1;p<=pages;p++){
+      doc.setPage(p);
+      doc.setFontSize(8); doc.setTextColor(140,160,168);
+      doc.setFont('helvetica','normal');
+      doc.text('Travel Time  -  page ' + p + '/' + pages, W/2, 291, { align:'center' });
+    }
+    var fname = 'itineraire-' + (t.name||'voyage').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') + '.pdf';
+    var blob = doc.output('blob');
+    try {
+      var file = new File([blob], fname, { type:'application/pdf' });
+      if(navigator.canShare && navigator.canShare({ files:[file] })){
+        navigator.share({ files:[file], title: t.name }).catch(function(){});
+        return;
+      }
+    } catch(e){}
+    doc.save(fname);
+  }).catch(function(){ toast('PDF impossible (connexion requise la 1re fois) \uD83D\uDE13'); });
 }
 
 /* ---------- Modale étape (création + édition) ---------- */
@@ -824,12 +1127,35 @@ function buildWhoChips(t){
     row.appendChild(b);
   });
 }
+function buildStepDocChips(){
+  allDocs().then(function(docs){
+    docs = docs.filter(function(d){ return d.tripId === currentTripId; });
+    var block = $('stepdoc-block'), row = $('stepdoc-chips');
+    if(!docs.length){ block.style.display = 'none'; return; }
+    block.style.display = 'block';
+    row.innerHTML = '';
+    docs.forEach(function(d){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + (stepDocs.indexOf(d.id) !== -1 ? ' on' : '');
+      b.textContent = '\uD83C\uDF9F\uFE0F ' + d.nom;
+      b.addEventListener('click', function(){
+        var ix = stepDocs.indexOf(d.id);
+        if(ix === -1) stepDocs.push(d.id); else stepDocs.splice(ix,1);
+        buildStepDocChips();
+      });
+      row.appendChild(b);
+    });
+  });
+}
 function openStepForm(day, step){
   var t = getTrip(currentTripId);
   stepDay = day;
   editingStepId = step ? step.id : null;
   stepType = step ? (step.type || '') : '';
   stepWho = step ? (step.who || null) : null;
+  stepDocs = step ? (step.docs || []).slice() : [];
+  buildStepDocChips();
   $('step-form-title').textContent = step ? 'Modifier l\u2019\u00E9tape' : 'Ajouter une \u00E9tape';
   $('f-steptxt').value = step ? step.txt : '';
   $('f-steptime').value = step ? (step.time || '') : '';
@@ -849,11 +1175,11 @@ function saveStepForm(){
     for(var i=0;i<t.steps[stepDay].length;i++){
       var s = t.steps[stepDay][i];
       if(s.id === editingStepId){
-        s.txt = txt; s.time = $('f-steptime').value; s.type = stepType; s.who = stepWho;
+        s.txt = txt; s.time = $('f-steptime').value; s.type = stepType; s.who = stepWho; s.docs = stepDocs.slice();
       }
     }
   } else {
-    t.steps[stepDay].push({ id: uid(), time: $('f-steptime').value, txt: txt, type: stepType, who: stepWho });
+    t.steps[stepDay].push({ id: uid(), time: $('f-steptime').value, txt: txt, type: stepType, who: stepWho, docs: stepDocs.slice() });
   }
   saveState().then(function(){
     closeSheet('ov-step');
@@ -900,6 +1226,177 @@ function addPerson(){
   saveState().then(function(){
     renderPeopleList();
     renderTrip();
+  });
+}
+
+/* ---------- Rendu infos pays & transport ---------- */
+function infoRow(l, v){
+  return '<div class="info-row"><span class="il">' + l + '</span><span class="iv">' + v + '</span></div>';
+}
+function packList(items){
+  var h = '<ul class="info-list">';
+  items.forEach(function(it){ h += '<li>' + esc(it) + '</li>'; });
+  return h + '</ul>';
+}
+function genTodos(){
+  var t = getTrip(currentTripId);
+  if(!t.start){ toast('Ajoute une date de d\u00E9part d\u2019abord \uD83D\uDCC5'); return; }
+  var d = findDest(t);
+  var cl = climateFor(t);
+  var tr = t.transport || [];
+  var rules = [
+    { off:30, lbl:'V\u00E9rifier la validit\u00E9 des papiers d\u2019identit\u00E9' },
+    { off:7,  lbl:'T\u00E9l\u00E9charger billets + r\u00E9sas dans l\u2019onglet Docs' },
+    { off:2,  lbl:'Faire la valise (la liste est pr\u00EAte dans Valise !)' },
+    { off:1,  lbl:'Pr\u00E9venir la banque si hors zone euro / v\u00E9rifier plafonds CB' }
+  ];
+  if(d && /ESTA/.test(d.d)) rules.push({ off:21, lbl:'Faire la demande ESTA en ligne (\u00E9viter le dernier moment)' });
+  if(d && /AVE/.test(d.d)) rules.push({ off:21, lbl:'Faire la demande AVE en ligne' });
+  if(d && /visa/i.test(d.d)) rules.push({ off:30, lbl:'Lancer la demande de visa / e-visa' });
+  if(tr.indexOf('avion') !== -1){
+    rules.push({ off:3, lbl:'Check-in en ligne (d\u00E8s ouverture)' });
+    rules.push({ off:1, lbl:'V\u00E9rifier le terminal et l\u2019heure limite d\u2019embarquement' });
+  }
+  if(tr.indexOf('voiture') !== -1){
+    rules.push({ off:7, lbl:'V\u00E9rifier la voiture : pneus, niveaux, roue de secours' });
+    rules.push({ off:7, lbl:'Acheter vignettes / badge t\u00E9l\u00E9p\u00E9age si besoin' });
+  }
+  if(tr.indexOf('ferry') !== -1) rules.push({ off:1, lbl:'V\u00E9rifier l\u2019heure d\u2019embarquement du ferry' });
+  if(cl && cl.climate === 'glacial') rules.push({ off:14, lbl:'Compl\u00E9ter l\u2019\u00E9quipement grand froid si besoin' });
+  if(cl && cl.climate === 'chaud') rules.push({ off:7, lbl:'Acheter cr\u00E8me solaire + anti-moustique' });
+
+  var old = t.todos || [];
+  var start = new Date(t.start + 'T12:00:00');
+  t.todos = rules.map(function(r){
+    var dt = new Date(start); dt.setDate(dt.getDate() - r.off);
+    var iso = dt.toISOString().slice(0,10);
+    var done = false;
+    old.forEach(function(o){ if(o.lbl === r.lbl && o.done) done = true; });
+    return { id: uid(), lbl: r.lbl, date: iso, done: done };
+  }).sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+  saveState().then(function(){
+    renderInfos(t);
+    toast(t.todos.length + ' rappels g\u00E9n\u00E9r\u00E9s \u23F0');
+  });
+}
+function todoBadge(td){
+  if(td.done) return '\u2705';
+  var dl = daysUntil(td.date);
+  if(dl < 0) return '\uD83D\uDD34 en retard \u00B7';
+  if(dl === 0) return '\uD83D\uDFE1 aujourd\u2019hui \u00B7';
+  return '\uD83D\uDCC5';
+}
+function renderInfos(t){
+  var pane = $('pane-infos');
+  var d = findDest(t);
+  var html = '';
+
+  // Rappels avant départ
+  if(t.start){
+    html += '<div class="info-card"><h4>\u23F0 \u00C0 faire avant le d\u00E9part</h4>';
+    if(t.todos && t.todos.length){
+      t.todos.forEach(function(td){
+        html += '<div class="check' + (td.done ? ' done' : '') + '" data-todo="' + td.id + '" style="box-shadow:none;margin-bottom:6px">' +
+          '<div class="box">' + (td.done ? '\u2713' : '') + '</div>' +
+          '<div class="lbl">' + esc(td.lbl) + '<div class="doc-meta">' + todoBadge(td) + ' ' + fmtDate(td.date) + '</div></div></div>';
+      });
+      html += '<button class="add-step" data-gentodo="1" style="width:100%;margin-top:4px">\u21BB Actualiser les rappels</button>';
+    } else {
+      html += '<p class="hint" style="margin-top:0">Je peux te g\u00E9n\u00E9rer la liste des trucs \u00E0 faire avant de partir (ESTA, check-in, valise\u2026) avec les bonnes dates selon ton voyage.</p>' +
+        '<button class="btn small full" data-gentodo="1" style="margin-top:8px">\u2728 G\u00E9n\u00E9rer mes rappels</button>';
+    }
+    html += '</div>';
+  }
+
+  // Budget estimatif
+  if(d && t.start && t.end){
+    var nbj = dayList(t).length;
+    var ppl = Math.max(1, (t.people||[]).length);
+    var mid = BUDGET_OVR[d.n] || BUDGET_ZONE[d.z] || 100;
+    var lo = Math.round(mid * 0.65), hi = Math.round(mid * 1.4);
+    html += '<div class="info-card"><h4>\uD83D\uDCB6 Budget estimatif</h4>' +
+      infoRow('Par pers. / jour', lo + ' \u2013 ' + hi + ' \u20AC') +
+      infoRow('Dur\u00E9e', nbj + ' jour' + (nbj>1?'s':'')) +
+      infoRow('Voyageurs', String(ppl)) +
+      infoRow('Total estim\u00E9', '<b>' + (lo*nbj*ppl).toLocaleString('fr-FR') + ' \u2013 ' + (hi*nbj*ppl).toLocaleString('fr-FR') + ' \u20AC</b>') +
+      '<p class="hint">Grosse louche : h\u00E9bergement + repas + activit\u00E9s, hors transport aller-retour. Pour les comptes pr\u00E9cis pendant le voyage, y a \u00C9qui \uD83D\uDE09</p></div>';
+  }
+
+  // Fiche pays
+  if(d){
+    html += '<div class="info-card"><h4>\uD83D\uDEC2 ' + esc(d.n) + ' \u2014 le kit de survie</h4>' +
+      infoRow('Papiers', esc(d.d)) +
+      infoRow('Monnaie', esc(d.m)) +
+      infoRow('Langue', esc(d.lg)) +
+      infoRow('Conduite', d.c === 'D' ? '\u00C0 droite' : esc(d.c)) +
+      infoRow('Prises', esc(d.p)) +
+      infoRow('Urgences', esc(d.e)) +
+      infoRow('Eau du robinet', d.w ? '\u2705 potable' : '\u26A0\uFE0F en bouteille de pr\u00E9f\u00E9rence') +
+      '<p class="hint">Les r\u00E8gles d\u2019entr\u00E9e peuvent changer : v\u00E9rifie sur Conseils aux voyageurs avant de partir.</p></div>';
+  } else if(t.country || t.dest){
+    html += '<div class="info-card"><h4>\uD83D\uDEC2 Formalit\u00E9s</h4><p class="hint" style="margin-top:0">Je ne connais pas encore cette destination \u2014 v\u00E9rifie les papiers n\u00E9cessaires sur Conseils aux voyageurs (lien en bas).</p></div>';
+  }
+
+  // Transport
+  var tr = t.transport || [];
+  if(tr.indexOf('avion') !== -1){
+    html += '<div class="info-card"><h4>\u2708\uFE0F Avion \u2014 \u00E0 ne pas oublier</h4>' + packList(AIR_ITEMS) +
+      '<button class="btn small full" data-addpack="avion" style="margin-top:10px">+ Ajouter \u00E0 ma valise</button></div>';
+  }
+  if(tr.indexOf('voiture') !== -1){
+    var carItems = GENERIC_CAR.slice();
+    if(d && CAR_RULES[d.n]) carItems = carItems.concat(CAR_RULES[d.n]);
+    html += '<div class="info-card"><h4>\uD83D\uDE97 Voiture \u2014 \u00E9quipement' + (d ? ' (' + esc(d.n) + ')' : '') + '</h4>' + packList(carItems) +
+      '<button class="btn small full" data-addpack="voiture" style="margin-top:10px">+ Ajouter \u00E0 ma valise</button></div>';
+  }
+  if(tr.indexOf('train') !== -1){
+    html += '<div class="info-card"><h4>\uD83D\uDE86 Train</h4>' + packList(TRAIN_ITEMS) +
+      '<button class="btn small full" data-addpack="train" style="margin-top:10px">+ Ajouter \u00E0 ma valise</button></div>';
+  }
+  if(tr.indexOf('ferry') !== -1){
+    html += '<div class="info-card"><h4>\u26F4\uFE0F Ferry</h4>' + packList(FERRY_ITEMS) +
+      '<button class="btn small full" data-addpack="ferry" style="margin-top:10px">+ Ajouter \u00E0 ma valise</button></div>';
+  }
+  if(!tr.length){
+    html += '<div class="empty"><span class="big">\uD83E\uDDED</span>Indique comment tu y vas (\u270E en haut, section \u00AB Comment tu y vas ? \u00BB) pour avoir les infos transport : \u00E9quipement voiture, r\u00E8gles avion\u2026</div>';
+  }
+
+  // Découvrir la destination
+  if(t.dest || t.country){
+    var ville = encodeURIComponent((t.dest || t.country).trim());
+    html += '<div class="info-card"><h4>\uD83D\uDCD6 D\u00E9couvrir ' + esc(t.dest || t.country) + '</h4><div class="link-row">' +
+      '<a href="https://fr.wikipedia.org/wiki/' + ville + '" target="_blank" rel="noopener">\uD83D\uDCD5 Wikip\u00E9dia</a>' +
+      '<a href="https://fr.wikivoyage.org/wiki/' + ville + '" target="_blank" rel="noopener">\uD83E\uDDED Wikivoyage</a>' +
+      '<a href="https://www.diplomatie.gouv.fr/fr/conseils-aux-voyageurs/conseils-par-pays-destination/" target="_blank" rel="noopener">\uD83D\uDEC2 Conseils aux voyageurs</a>' +
+      '</div><p class="hint">Wikivoyage = le guide gratuit : quartiers, incontournables, bons plans.</p></div>';
+  }
+
+  pane.innerHTML = html;
+}
+function addPack(pack){
+  var t = getTrip(currentTripId);
+  if(!t.checklist) t.checklist = [];
+  var items;
+  if(pack === 'avion') items = AIR_ITEMS;
+  else if(pack === 'train') items = TRAIN_ITEMS;
+  else if(pack === 'ferry') items = FERRY_ITEMS;
+  else {
+    items = GENERIC_CAR.slice();
+    var d = findDest(t);
+    if(d && CAR_RULES[d.n]) items = items.concat(CAR_RULES[d.n]);
+  }
+  var existing = t.checklist.map(function(c){ return c.lbl.toLowerCase(); });
+  var added = 0;
+  items.forEach(function(it){
+    if(existing.indexOf(it.toLowerCase()) === -1){
+      t.checklist.push({ id: uid(), lbl: it, done: false });
+      existing.push(it.toLowerCase());
+      added++;
+    }
+  });
+  saveState().then(function(){
+    renderChecklist(t);
+    toast(added ? added + ' \u00E9l\u00E9ment' + (added>1?'s':'') + ' ajout\u00E9' + (added>1?'s':'') + ' \u00E0 la valise \u2713' : 'D\u00E9j\u00E0 tout dans la valise \uD83D\uDC4C');
   });
 }
 
@@ -962,12 +1459,47 @@ function openTripForm(trip){
   $('trip-form-title').textContent = trip ? 'Modifier le voyage' : 'Nouveau voyage';
   $('f-name').value = trip ? trip.name : '';
   $('f-dest').value = trip ? trip.dest : '';
+  $('f-country').value = trip ? (trip.country||'') : '';
+  chosenTypes = trip ? (trip.types||[]).slice() : [];
+  buildTripTypeChips();
+  chosenTransport = trip ? (trip.transport||[]).slice() : [];
+  buildTransportChips();
   $('f-start').value = trip ? (trip.start||'') : '';
   $('f-end').value = trip ? (trip.end||'') : '';
   chosenEmoji = trip ? trip.emoji : EMOJIS[0];
   buildEmojiRow();
   $('btn-del-trip').style.display = trip ? 'block' : 'none';
   openSheet('ov-trip');
+}
+function buildTripTypeChips(){
+  var row = $('triptype-chips'); row.innerHTML = '';
+  TRIP_TYPES.forEach(function(ty){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (chosenTypes.indexOf(ty.id) !== -1 ? ' on' : '');
+    b.textContent = ty.l;
+    b.addEventListener('click', function(){
+      var ix = chosenTypes.indexOf(ty.id);
+      if(ix === -1) chosenTypes.push(ty.id); else chosenTypes.splice(ix,1);
+      buildTripTypeChips();
+    });
+    row.appendChild(b);
+  });
+}
+function buildTransportChips(){
+  var row = $('transport-chips'); row.innerHTML = '';
+  TRANSPORTS.forEach(function(tr){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (chosenTransport.indexOf(tr.id) !== -1 ? ' on' : '');
+    b.textContent = tr.l;
+    b.addEventListener('click', function(){
+      var ix = chosenTransport.indexOf(tr.id);
+      if(ix === -1) chosenTransport.push(tr.id); else chosenTransport.splice(ix,1);
+      buildTransportChips();
+    });
+    row.appendChild(b);
+  });
 }
 function buildEmojiRow(){
   var row = $('emoji-row'); row.innerHTML = '';
@@ -989,9 +1521,13 @@ function saveTripForm(){
   if(editingTripId){
     var t = getTrip(editingTripId);
     t.name = name; t.dest = $('f-dest').value.trim();
+    t.country = $('f-country').value.trim();
+    t.types = chosenTypes.slice();
+    t.transport = chosenTransport.slice();
     t.start = start; t.end = end; t.emoji = chosenEmoji;
   } else {
     state.trips.push({ id: uid(), name: name, dest: $('f-dest').value.trim(),
+      country: $('f-country').value.trim(), types: chosenTypes.slice(), transport: chosenTransport.slice(),
       start: start, end: end, emoji: chosenEmoji, steps: {}, checklist: [], people: [] });
   }
   saveState().then(function(){
@@ -1044,23 +1580,55 @@ function openDocForm(target){
   var fd = $('file-drop');
   fd.classList.remove('has');
   fd.innerHTML = '\uD83D\uDCF7 Prendre une photo ou choisir un fichier<br><small>Image ou PDF</small>';
+  var lb = $('doc-link-block');
+  if(target === 'general'){ lb.style.display = 'none'; }
+  else {
+    var t = getTrip(target);
+    var days = t ? dayList(t) : [];
+    if(!days.length){ lb.style.display = 'none'; }
+    else {
+      lb.style.display = 'block';
+      var sel = $('f-docday');
+      var opts = '<option value="">Non merci</option>';
+      days.forEach(function(day, i){
+        opts += '<option value="' + day + '">Jour ' + (i+1) + ' \u2014 ' + fmtDate(day) + '</option>';
+      });
+      sel.innerHTML = opts;
+      sel.value = '';
+      $('f-doctime').value = '';
+    }
+  }
   openSheet('ov-doc');
 }
 function saveDocForm(){
   if(!pendingFile){ toast('Choisis d\u2019abord un fichier \uD83D\uDCC4'); return; }
   var nom = $('f-docname').value.trim() || pendingFile.name.replace(/\.[^.]+$/,'');
   var cat = $('f-doccat').value;
+  var docId = uid();
+  var linkDay = (docContext !== 'general' && $('doc-link-block').style.display !== 'none') ? $('f-docday').value : '';
+  var linkTime = $('f-doctime').value;
   makeThumb(pendingFile).then(function(thumb){
-    var doc = { id: uid(), tripId: docContext, nom: nom, cat: cat,
+    var doc = { id: docId, tripId: docContext, nom: nom, cat: cat,
       type: pendingFile.type || 'application/octet-stream',
       size: pendingFile.size, blob: pendingFile, thumb: thumb, date: Date.now() };
     return putDoc(doc);
   }).then(function(){
+    if(linkDay){
+      var t = getTrip(docContext);
+      if(!t.steps) t.steps = {};
+      if(!t.steps[linkDay]) t.steps[linkDay] = [];
+      t.steps[linkDay].push({ id: uid(), time: linkTime, txt: nom, type: CAT_STEP[cat] || '', who: null, docs: [docId] });
+      return saveState();
+    }
+  }).then(function(){
     closeSheet('ov-doc');
     if(docContext === 'general') renderDocs('vault-docs','general');
-    else renderDocs('trip-docs', docContext);
+    else {
+      renderDocs('trip-docs', docContext);
+      if(docContext === currentTripId) renderIti(getTrip(currentTripId));
+    }
     renderHome();
-    toast('Document enregistr\u00E9 \uD83D\uDD10');
+    toast(linkDay ? 'Billet enregistr\u00E9 + \u00E9tape cr\u00E9\u00E9e \uD83C\uDF9F\uFE0F' : 'Document enregistr\u00E9 \uD83D\uDD10');
   }).catch(function(){ toast('Oups, stockage impossible \uD83D\uDE13'); });
 }
 
@@ -1109,10 +1677,18 @@ function deleteViewedDoc(){
     if(!d) return;
     if(!confirm('Supprimer \u00AB ' + d.nom + ' \u00BB ?')) return;
     delDoc(d.id).then(function(){
-      closeSheet('ov-view');
-      refreshDocLists(d.tripId);
-      renderHome();
-      toast('Document supprim\u00E9');
+      var tr = getTrip(d.tripId);
+      if(tr && tr.steps){
+        for(var k in tr.steps) if(tr.steps.hasOwnProperty(k))
+          tr.steps[k].forEach(function(s){ if(s.docs) s.docs = s.docs.filter(function(x){ return x !== d.id; }); });
+      }
+      return saveState().then(function(){
+        closeSheet('ov-view');
+        refreshDocLists(d.tripId);
+        if(tr && d.tripId === currentTripId) renderIti(tr);
+        renderHome();
+        toast('Document supprim\u00E9');
+      });
     });
   });
 }
@@ -1249,6 +1825,8 @@ function bind(){
     }
     var doc = e.target.closest('.doc');
     if(doc && doc.dataset.doc){ openDocView(doc.dataset.doc); return; }
+    var vdoc = e.target.closest('[data-viewdoc]');
+    if(vdoc){ openDocView(vdoc.dataset.viewdoc); return; }
 
     var addBtn = e.target.closest('[data-addstep]');
     if(addBtn){ openStepForm(addBtn.dataset.addstep, null); return; }
@@ -1270,6 +1848,17 @@ function bind(){
       var found = null;
       (t4.steps[p2[0]] || []).forEach(function(s){ if(s.id === p2[1]) found = s; });
       if(found) openStepForm(p2[0], found);
+      return;
+    }
+    var packBtn = e.target.closest('[data-addpack]');
+    if(packBtn){ addPack(packBtn.dataset.addpack); return; }
+    if(e.target.closest('[data-pdf]')){ exportPdf(); return; }
+    if(e.target.closest('[data-gentodo]')){ genTodos(); return; }
+    var todoEl = e.target.closest('[data-todo]');
+    if(todoEl){
+      var t6 = getTrip(currentTripId);
+      (t6.todos||[]).forEach(function(td){ if(td.id === todoEl.dataset.todo) td.done = !td.done; });
+      saveState().then(function(){ renderInfos(t6); });
       return;
     }
     var delPerson = e.target.closest('[data-delperson]');
@@ -1315,15 +1904,11 @@ function bind(){
   // checklist
   $('btn-addcheck').addEventListener('click', addCheckItem);
   $('check-input').addEventListener('keydown', function(e){ if(e.key === 'Enter') addCheckItem(); });
-  $('btn-preset').addEventListener('click', function(){
-    var t = getTrip(currentTripId);
-    if(!t.checklist) t.checklist = [];
-    var existing = t.checklist.map(function(c){ return c.lbl.toLowerCase(); });
-    PRESET_VALISE.forEach(function(p){
-      if(existing.indexOf(p.toLowerCase()) === -1)
-        t.checklist.push({ id: uid(), lbl: p, done: false });
-    });
-    saveState().then(function(){ renderChecklist(t); toast('Indispensables ajout\u00E9s \u2728'); });
+  $('btn-preset').addEventListener('click', smartValise);
+  var climChips = document.querySelectorAll('[data-climat]');
+  for(var cc=0;cc<climChips.length;cc++) climChips[cc].addEventListener('click', function(){
+    closeSheet('ov-climat');
+    applyValise(this.dataset.climat, '');
   });
 }
 function addCheckItem(){
