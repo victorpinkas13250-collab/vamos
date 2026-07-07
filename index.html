@@ -360,7 +360,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div style="color:var(--muted)">&#8250;</div>
   </div>
 
-  <footer>Travel Time v1.6.0 &middot; données stockées sur cet appareil</footer>
+  <footer>Travel Time v1.7.0 &middot; données stockées sur cet appareil</footer>
   <button class="fab" id="fab-home" aria-label="Nouveau voyage">+</button>
 </div>
 
@@ -544,6 +544,19 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 </div>
 
+<div class="overlay" id="ov-quiz">
+  <div class="sheet">
+    <div class="grip"></div>
+    <h3>&#127919; Dis-m&rsquo;en plus sur ce voyage</h3>
+    <p class="hint" style="margin-top:0">Coche ce que tu vas faire sur place &mdash; j&rsquo;ai d&eacute;j&agrave; pr&eacute;-coch&eacute; en lisant ton itin&eacute;raire et ta destination. D&eacute;coche ce qui te concerne pas (pas de ski = pas de skis dans la liste, promis).</p>
+    <div class="chips" id="quiz-chips" style="margin-top:12px"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" data-close="ov-quiz">Annuler</button>
+      <button class="btn" id="btn-quiz-gen">&#10024; G&eacute;n&eacute;rer la valise</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="ov-climat">
   <div class="sheet">
     <div class="grip"></div>
@@ -687,6 +700,25 @@ var BUDGET_OVR = { '\u00C9tats-Unis':170, 'Golfe':140, 'Islande':160, 'Asie de l
 var AIR_ITEMS = ['V\u00E9rifier la validit\u00E9 du passeport / CNI','Billets + cartes d\u2019embarquement t\u00E9l\u00E9charg\u00E9s','Liquides en cabine : max 100 ml par flacon','Batterie externe EN CABINE (interdite en soute !)','Arriver 2h avant (3h pour les longs courriers)'];
 var TRAIN_ITEMS = ['Billets t\u00E9l\u00E9charg\u00E9s en mode hors ligne','Pi\u00E8ce d\u2019identit\u00E9 sur soi'];
 var FERRY_ITEMS = ['Billets ferry t\u00E9l\u00E9charg\u00E9s','Arriver 1h avant (2h avec v\u00E9hicule)','M\u00E9dicament mal de mer (au cas o\u00F9)'];
+var ACTS = [
+  { id:'baignade', l:'\uD83C\uDFCA Baignade / piscine', k:['plage','playa','baignade','piscine','beach','calanque'], items:['Bonnet de bain (piscines municipales = obligatoire)','Lunettes de piscine','Maillot d\u2019entra\u00EEnement en plus','Serviette sp\u00E9ciale piscine','Claquettes de piscine','Sac pour maillot mouill\u00E9','Pince-nez (assume)','Gouttes s\u00E8che-oreilles apr\u00E8s baignade','Peignoir l\u00E9ger de voyage','Bou\u00E9e canard g\u00E9ante (improbable, photog\u00E9nique)','\u00C9lastique cheveux sp\u00E9cial eau','Cr\u00E8me apr\u00E8s-chlore'] },
+  { id:'ski', l:'\u26F7\uFE0F Ski / neige', k:['ski','snowboard','piste','snow','luge'], items:['Location skis / snow \u00E0 r\u00E9server \u00E0 l\u2019avance (moins cher)','Forfait achet\u00E9 en ligne (files d\u2019attente \u00E9vit\u00E9es)','Masque de ski','Casque (ou \u00E0 louer)','Gants de ski + sous-gants','Chaussettes de ski FINES (pas 3 paires, les initi\u00E9s savent)','Pantalon de ski','Veste de ski','Tour de cou polaire ski','Cr\u00E8me solaire indice 50 (le glacier crame)','Baume l\u00E8vres SPF ski','Boots apr\u00E8s-ski','Sac \u00E0 dos de pistes','Bonnet fin sous-casque','Dorsale (si tu envoies)','Thermos de vin chaud (ambiance)','Chaufferettes sp\u00E9cial pistes'] },
+  { id:'plongee', l:'\uD83E\uDD3F Snorkeling / plong\u00E9e', k:['plongee','snorkel','tuba','diving','corail'], items:['Masque + tuba perso (l\u2019hygi\u00E8ne, tout \u00E7a)','Palmes de voyage','Lycra anti-UV','Chaussons n\u00E9opr\u00E8ne','GoPro + perche FLOTTANTE','Sac filet de s\u00E9chage','Carnet / certification de plong\u00E9e','Assurance plong\u00E9e v\u00E9rifi\u00E9e','Spray anti-bu\u00E9e masque','Bouchons d\u2019\u00E9quilibrage','Cr\u00E8me solaire reef-safe (les coraux te remercient)','Sac \u00E9tanche 20L','Serviette d\u00E9di\u00E9e plong\u00E9e'] },
+  { id:'sport', l:'\uD83C\uDFC3 Sport / footing', k:['footing','running','course','sport','muscu','fitness'], items:['Tenues de sport x2','Chaussures de running','\u00C9couteurs sport','Montre GPS / cardio + chargeur','Gourde de sport','Serviette microfibre sport','Brassi\u00E8res x2','Chaussettes techniques','\u00C9lastiques de r\u00E9sistance (improbable, efficace)','Corde \u00E0 sauter','Parcours de course t\u00E9l\u00E9charg\u00E9','Brassard t\u00E9l\u00E9phone','Casquette de sport','Gel douche 2-en-1 vestiaire'] },
+  { id:'soiree', l:'\uD83C\uDF89 Sorties / soir\u00E9es', k:['soiree','club','pub','fiesta','concert','festival','discoteca','boite de nuit','rooftop'], items:['Tenue de soir\u00E9e','Chaussures de soir\u00E9e (mais marchables, sois honn\u00EAte)','Chemise / robe qui froisse pas','Spray d\u00E9froissant (improbable, sauveur)','Cash pour les entr\u00E9es et vestiaires','Pochette de soir\u00E9e s\u00E9curis\u00E9e','Bouchons d\u2019oreilles de concert (les vrais savent)','Kit lendemain difficile (eau + doliprane pr\u00E8s du lit)','Adresse de l\u2019h\u00F4tel not\u00E9e SUR PAPIER (le classico 3h du mat)','Batterie charg\u00E9e AVANT de sortir','Veste l\u00E9g\u00E8re pour la file d\u2019attente','Chewing-gums de soir\u00E9e','Lunettes de secours (les soir\u00E9es, \u00E7a casse)'] },
+  { id:'gastro', l:'\uD83C\uDF7D\uFE0F Restos / gastronomie', k:['resto','restaurant','tapas','trattoria','gastro','marche','brunch','bodega'], items:['R\u00E9servations restos faites (les bons, \u00E7a se r\u00E9serve)','Liste des sp\u00E9cialit\u00E9s \u00E0 go\u00FBter','Pantalon confort extensible (strat\u00E9gie long terme)','Anti-acide / digestif','Carnet des restos test\u00E9s (notes de d\u00E9gustation)','Glaci\u00E8re souple pour les produits du retour','Place pr\u00E9vue dans la valise pour fromage / vin (SOUTE)','Lingettes mains street-food','\u00C9qui install\u00E9 pour partager l\u2019addition \uD83D\uDE0F','Cure-dents de poche gastronomie'] },
+  { id:'culture', l:'\uD83C\uDFDB\uFE0F Mus\u00E9es / culture', k:['musee','museo','museum','galerie','expo','cathedrale','palais','chateau','sagrada','louvre','monument'], items:['Billets coupe-file r\u00E9serv\u00E9s (les files, non merci)','City-pass compar\u00E9 et achet\u00E9','Chaussures ULTRA confort (le marbre des mus\u00E9es pardonne pas)','Audio-guide / appli du mus\u00E9e t\u00E9l\u00E9charg\u00E9e','Preuve d\u2019\u00E2ge / carte pour tarifs r\u00E9duits','Petites jumelles pour les plafonds (improbable, g\u00E9nial)','Monnaie pour les consignes de mus\u00E9e','Carnet de croquis (assume ton c\u00F4t\u00E9 artiste)','Pull pour la clim mus\u00E9ale','Gomme + crayon (les stylos sont interdits pr\u00E8s des \u0153uvres !)'] },
+  { id:'photo', l:'\uD83D\uDCF8 Photo / vid\u00E9o', k:['photo','shooting','drone','golden hour'], items:['Appareil + objectifs choisis (pas TOUT le sac)','Filtre polarisant / ND','Tr\u00E9pied l\u00E9ger','Batteries x3 charg\u00E9es','Cartes SD format\u00E9es','Chiffon optique','Sac photo discret (pas le sac qui crie \u00AB vole-moi \u00BB)','Housse pluie pour l\u2019appareil','Dragonne de s\u00E9curit\u00E9','Sauvegarde photos pr\u00E9vue (disque / cloud)','Drone + batteries (V\u00C9RIFIE la l\u00E9gislation locale !)','Rep\u00E9rage golden hour fait (appli soleil)'] },
+  { id:'velo', l:'\uD83D\uDEB4 V\u00E9lo', k:['velo','bike','cyclisme','vtt'], items:['Casque v\u00E9lo','Gants v\u00E9lo','Cuissard (le confort n\u2019a pas de prix)','Cr\u00E8me pour cuissard (les initi\u00E9s savent)','Maillot technique','Lunettes v\u00E9lo','Kit r\u00E9paration + rustines','Mini pompe','Chambre \u00E0 air de rechange','Antivol costaud','\u00C9clairages + chargeurs','Gourdes v\u00E9lo x2','Compteur / GPS v\u00E9lo','Sacoche de guidon'] },
+  { id:'bateau', l:'\u26F5 Bateau / croisi\u00E8re', k:['bateau','croisiere','catamaran','voilier','kayak','paddle'], items:['Bracelets anti mal de mer','Lunettes avec cordon (la mer les mange)','Coupe-vent marin','Chaussures antid\u00E9rapantes de pont','Casquette qui tient au vent','Sac \u00E9tanche marin','Cr\u00E8me solaire sp\u00E9cial mer (la r\u00E9verb\u00E9ration pardonne pas)','V\u00EAtements de rechange en sac \u00E9tanche','Gants de voile (si tu participes)','Polaire pour le soir en mer','Gingembre / pastilles anti-naus\u00E9e naturelles'] },
+  { id:'peche', l:'\uD83C\uDFA3 P\u00EAche', k:['peche','fishing'], items:['Canne de voyage d\u00E9montable','Moulinet','Bo\u00EEte de leurres','Fil de rechange','Pince + ciseaux de p\u00EAche (EN SOUTE)','Permis / carte de p\u00EAche locale V\u00C9RIFI\u00C9E','\u00C9puisette pliable','Gants de p\u00EAche','Si\u00E8ge pliant','Glaci\u00E8re pour les prises','Lunettes polarisantes (voir sous l\u2019eau, magique)','R\u00E9pulsif moustiques du bord de l\u2019eau','Chapeau de p\u00EAcheur assum\u00E9'] },
+  { id:'detente', l:'\uD83E\uDDD6 D\u00E9tente / spa', k:['spa','hammam','thermes','massage','sauna','detente'], items:['Maillot pour le spa (souvent obligatoire, si si)','Tongs de spa','Masque de nuit en soie (le luxe)','Le bouquin que tu repousses depuis 6 mois','Tenue cocooning','Chaussettes cosy','Tisanes du soir','Huile de massage','Playlist d\u00E9tente t\u00E9l\u00E9charg\u00E9e','Boules Quies premium','Carnet de gratitude (assume, personne ne regarde)'] },
+  { id:'shopping', l:'\uD83D\uDECD\uFE0F Shopping', k:['shopping','outlet','boutique','souk','soldes'], items:['Sac XXL pliable sp\u00E9cial shopping','Re-peser la valise AVANT l\u2019a\u00E9roport','Liste des tailles de toute la famille (improbable, malin)','Budget shopping en cash s\u00E9par\u00E9 (sinon \u00E7a d\u00E9rape)','Limites douane v\u00E9rifi\u00E9es','Formulaires / appli de d\u00E9taxe','Papier bulle de poche (improbable \uD83D\uDE02)','Valise \u00E0 soufflet ou 2e sac pr\u00E9vu','Photos des placards (\u00E9viter les doublons d\u2019achats)'] },
+  { id:'enfants', l:'\uD83D\uDC76 Avec des enfants', k:['enfant','kids','zoo','parc d attraction','aquarium'], items:['DOUDOU (le truc \u00E0 ne JAMAIS oublier)','Doudou de secours identique (parents exp\u00E9riment\u00E9s)','Go\u00FBters x1000','Gourde enfant','Lingettes x1000','Cr\u00E8me solaire enfant','Chapeau enfant','Brassards','Poussette canne','Porte-b\u00E9b\u00E9','Jeux + coloriages','Tablette charg\u00E9e + casque enfant','V\u00EAtements de rechange x2 par jour','M\u00E9dicaments enfant + carnet de sant\u00E9','Veilleuse de voyage','Bracelet d\u2019identification avec TON num\u00E9ro (le vrai malin)','Sacs pour v\u00EAtements sales d\u2019enfant','Patience (pas dans la valise mais bon)'] },
+  { id:'animal', l:'\uD83D\uDC15 Avec un animal', k:['chien','chat','animal'], items:['Carnet de vaccination + passeport animal','Gamelle pliable','Croquettes dos\u00E9es + rab','Laisse + harnais de rechange','Sacs \u00E0 crottes','Panier / couverture qui sent la maison','Jouet pr\u00E9f\u00E9r\u00E9','Antipuces / tiques \u00E0 jour','M\u00E9daille avec ton num\u00E9ro','Museli\u00E8re (obligatoire dans certains transports)','Caisse de transport homologu\u00E9e','Serviette d\u00E9di\u00E9e chien mouill\u00E9','Brosse','V\u00E9to local rep\u00E9r\u00E9 au cas o\u00F9'] },
+  { id:'taf', l:'\uD83D\uDCBB T\u00E9l\u00E9travail', k:['teletravail','coworking','visio','boulot'], items:['Ordinateur + chargeur','\u00C9cran portable (improbable, productif)','Souris','Casque micro pour les visios','Multiprise sp\u00E9ciale bureau nomade','VPN configur\u00E9 AVANT de partir','Partage de connexion test\u00E9','Adaptateur HDMI','Support ordi pliable','Forfait data \u00E9tranger v\u00E9rifi\u00E9','Carnet + stylos boulot','Bouchons anti-bruit de coworking','Fond de visio neutre rep\u00E9r\u00E9 \uD83D\uDE02'] },
+  { id:'camping', l:'\u26FA Camping', k:['camping','bivouac','van'], items:['Tente + sardines COMPT\u00C9ES avant d\u00E9part','Tapis de sol','Sac de couchage adapt\u00E9 \u00E0 la temp\u00E9rature','Matelas gonflable + gonfleur','Oreiller de camp','R\u00E9chaud (cartouche INTERDITE en avion, ach\u00E8te sur place)','Popote + \u00E9ponge','Allumettes \u00E9tanches','Lampe de camp','Batterie solaire (improbable, styl\u00E9)','Moustiquaire de camp','Papier toilette + pelle \uD83D\uDE02','Sacs poubelle camp propre','Corde + b\u00E2che multi-usage','Chaise pliante d\u2019ap\u00E9ro (priorit\u00E9s)','Bidon d\u2019eau 5L'] }
+];
 var VALISE = {
   papiers: ['Carte d’identité / passeport','Permis de conduire','Carte européenne d’assurance maladie','Billets de transport (aller ET retour)','Confirmations d’hébergement','Assurance voyage (n° de contrat noté)','Photocopies des papiers (rangées à part)','Papiers scannés dans le Coffre de l’app 😏','Photos d’identité de secours','CB principale','CB de secours (autre banque)','Espèces en euros','Devises locales (un peu, le reste sur place)','Petite monnaie (toilettes, pourboires)','Portefeuille de voyage (pas celui de tous les jours)','Pochette tour de cou pour papiers','Numéros d’opposition CB notés sur papier','Cartes de réduction (étudiant, famille…)','Carte de fidélité compagnie / hôtel','Justificatif de domicile (location de voiture)','Attestation mutuelle / assistance','Contact de l’ambassade noté quelque part'],
   electronique: ['Téléphone (oui, ça arrive de l’oublier)','Chargeur téléphone','Câble de rechange','Batterie externe','Deuxième batterie externe (les photos, ça pompe)','Multiprise (1 seule prise à l’hôtel, toujours)','Rallonge courte','Adaptateur universel','Écouteurs filaires (pour l’avion)','Casque / écouteurs bluetooth','Chargeur de la montre connectée (LE grand oublié)','Montre connectée','Liseuse','Chargeur de liseuse','Tablette pour le trajet','Appareil photo','Batterie d’appareil photo chargée','Carte SD de rechange','Perche à selfie / mini trépied','Caméra type GoPro + fixations','Clé USB (partager les photos)','Lampe de poche','Chargeur allume-cigare','Support téléphone voiture','Câble long 2 m (prise loin du lit)','Piles de rechange','AirTag / traceur dans la valise','Films et séries téléchargés AVANT de partir'],
@@ -846,6 +878,9 @@ function applyValise(climate, why){
   if(climate === 'glacial') packs.push([CLIM_CAT.froid, VALISE.froid]);
   packs.push([CLIM_CAT[climate], VALISE[climate] || []]);
   types.forEach(function(ty){ packs.push([TYPE_CAT[ty], VALISE[ty] || []]); });
+  (t.acts || []).forEach(function(aid){
+    ACTS.forEach(function(a){ if(a.id === aid) packs.push([a.l, a.items]); });
+  });
   var existing = t.checklist.map(function(c){ return c.lbl.toLowerCase(); });
   var added = 0;
   packs.forEach(function(pk){
@@ -862,11 +897,53 @@ function applyValise(climate, why){
     toast('Valise ' + CLIMAT_LBL[climate] + (why ? ' \u2014 ' + why : '') + (auto.length ? ' + ' + auto.join(' + ') : '') + ' (' + added + ' ajouts)');
   });
 }
+function detectActs(t){
+  var txt = ' ' + normTxt((t.dest||'') + ' ' + (t.country||''));
+  if(t.steps) for(var day in t.steps) if(t.steps.hasOwnProperty(day))
+    t.steps[day].forEach(function(s){ txt += ' ' + normTxt(s.txt); });
+  txt += ' ';
+  var found = [];
+  ACTS.forEach(function(a){
+    for(var i=0;i<a.k.length;i++){
+      if(txt.indexOf(' ' + a.k[i]) !== -1){ found.push(a.id); return; }
+    }
+  });
+  // ville de plage = baignade probable
+  if(found.indexOf('baignade') === -1 && matchSpots(t, BEACH_SPOTS)) found.push('baignade');
+  if((t.types||[]).indexOf('plage') !== -1 && found.indexOf('baignade') === -1) found.push('baignade');
+  return found;
+}
+var quizActs = [];
+function buildQuizChips(){
+  var row = $('quiz-chips'); row.innerHTML = '';
+  ACTS.forEach(function(a){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (quizActs.indexOf(a.id) !== -1 ? ' on' : '');
+    b.textContent = a.l;
+    b.addEventListener('click', function(){
+      var ix = quizActs.indexOf(a.id);
+      if(ix === -1) quizActs.push(a.id); else quizActs.splice(ix,1);
+      buildQuizChips();
+    });
+    row.appendChild(b);
+  });
+}
 function smartValise(){
   var t = getTrip(currentTripId);
-  var c = climateFor(t);
-  if(c) applyValise(c.climate, c.why);
-  else openSheet('ov-climat');
+  quizActs = (t.acts && t.acts.length) ? t.acts.slice() : detectActs(t);
+  buildQuizChips();
+  openSheet('ov-quiz');
+}
+function generateAfterQuiz(){
+  var t = getTrip(currentTripId);
+  t.acts = quizActs.slice();
+  saveState().then(function(){
+    closeSheet('ov-quiz');
+    var c = climateFor(t);
+    if(c) applyValise(c.climate, c.why);
+    else openSheet('ov-climat');
+  });
 }
 
 /* ---------- Navigation ---------- */
@@ -1967,6 +2044,7 @@ function bind(){
   $('btn-addcheck').addEventListener('click', addCheckItem);
   $('check-input').addEventListener('keydown', function(e){ if(e.key === 'Enter') addCheckItem(); });
   $('btn-preset').addEventListener('click', smartValise);
+  $('btn-quiz-gen').addEventListener('click', generateAfterQuiz);
   $('btn-clearvalise').addEventListener('click', function(){
     var t = getTrip(currentTripId);
     if(!t.checklist || !t.checklist.length) return;
