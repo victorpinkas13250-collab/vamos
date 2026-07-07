@@ -360,7 +360,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div style="color:var(--muted)">&#8250;</div>
   </div>
 
-  <footer>Travel Time v1.5.0 &middot; données stockées sur cet appareil</footer>
+  <footer>Travel Time v1.6.0 &middot; données stockées sur cet appareil</footer>
   <button class="fab" id="fab-home" aria-label="Nouveau voyage">+</button>
 </div>
 
@@ -396,6 +396,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <button class="btn small" id="btn-addcheck">+</button>
     </div>
     <button class="add-step" id="btn-preset" style="margin:10px 0 0;width:100%">&#10024; Liste adapt&eacute;e au voyage</button>
+    <button class="add-step" id="btn-clearvalise" style="margin:8px 0 0;width:100%">&#128465;&#65039; Vider toute la liste</button>
   </div>
 
   <div class="tabpane" id="pane-infos"></div>
@@ -659,6 +660,8 @@ var DESTS = [
   { k:['islande','reykjavik'], n:'Islande', z:'arctic', h:'N', d:'CNI ou passeport', m:'Couronne (ISK)', lg:'islandais / anglais', c:'D', p:'EU', e:'112', w:true },
   { k:['groenland','alaska','svalbard'], n:'Grand Nord', z:'arctic', h:'N', d:'Passeport', m:'Couronne danoise / dollar', lg:'danois / anglais', c:'D', p:'EU/US', e:'112 / 911', w:true }
 ];
+var BEACH_SPOTS = ['barcelone','valence','malaga','alicante','marbella','cadix','majorque','ibiza','canaries','baleares','marseille','nice','cannes','antibes','biarritz','sete','palavas','corse','algarve','madere','sicile','sardaigne','naples','amalfi','split','dubrovnik','santorin','crete','mykonos','corfou','rhodes','malte','antalya','bodrum','agadir','essaouira','djerba','hurghada','charm','dubai','phuket','koh','bali','maldives','seychelles','maurice','zanzibar','cancun','tulum','punta cana','martinique','guadeloupe','reunion','rio','miami','sydney','cuba','jamaique','bahamas'];
+var MOUNTAIN_SPOTS = ['alpes','chamonix','annecy','pyrenees','andorre','dolomites','tyrol','innsbruck','zermatt','interlaken','laponie','montagne','andes','cusco','machu picchu','himalaya','atlas'];
 var MOIS_FR = ['janvier','f\u00E9vrier','mars','avril','mai','juin','juillet','ao\u00FBt','septembre','octobre','novembre','d\u00E9cembre'];
 var CLIMAT_LBL = { chaud:'\u2600\uFE0F chaud', doux:'\uD83C\uDF24\uFE0F doux', froid:'\uD83E\uDDE3 froid', glacial:'\u2744\uFE0F glacial' };
 var TRANSPORTS = [
@@ -685,14 +688,21 @@ var AIR_ITEMS = ['V\u00E9rifier la validit\u00E9 du passeport / CNI','Billets + 
 var TRAIN_ITEMS = ['Billets t\u00E9l\u00E9charg\u00E9s en mode hors ligne','Pi\u00E8ce d\u2019identit\u00E9 sur soi'];
 var FERRY_ITEMS = ['Billets ferry t\u00E9l\u00E9charg\u00E9s','Arriver 1h avant (2h avec v\u00E9hicule)','M\u00E9dicament mal de mer (au cas o\u00F9)'];
 var VALISE = {
-  base: ['Carte d\u2019identit\u00E9 / passeport','Chargeur + c\u00E2ble','Batterie externe','Trousse de toilette','M\u00E9dicaments','\u00C9couteurs','Adaptateur de prise (si besoin)'],
-  chaud: ['Cr\u00E8me solaire','Lunettes de soleil','Casquette ou chapeau','V\u00EAtements l\u00E9gers','Anti-moustique','Tongs ou sandales','Gourde ou bouteille d\u2019eau'],
-  doux: ['Veste l\u00E9g\u00E8re','K-way ou parapluie','Pull ou sweat','Lunettes de soleil','Chaussures confortables'],
-  froid: ['Manteau chaud','Bonnet + gants + \u00E9charpe','Pulls (superposition)','Chaussettes chaudes','Baume \u00E0 l\u00E8vres'],
-  glacial: ['Doudoune grand froid','Sous-v\u00EAtements thermiques','Bonnet + gants + \u00E9charpe','Chaussettes en laine (x2)','Chaussures imperm\u00E9ables fourr\u00E9es','Chaufferettes pour les mains','Baume \u00E0 l\u00E8vres','Cr\u00E8me hydratante visage'],
-  plage: ['Maillot de bain','Serviette de plage','Cr\u00E8me solaire','Tongs ou sandales','Sac \u00E9tanche pour le t\u00E9l\u00E9phone'],
-  ville: ['Chaussures confortables','Petit sac \u00E0 dos ou banane','Une tenue un peu habill\u00E9e'],
-  montagne: ['Chaussures de rando','Sac \u00E0 dos de journ\u00E9e','Gourde','K-way ou parapluie','Cr\u00E8me solaire (\u00E7a tape en altitude !)','Casquette ou chapeau']
+  papiers: ['Carte d’identité / passeport','Permis de conduire','Carte européenne d’assurance maladie','Billets de transport (aller ET retour)','Confirmations d’hébergement','Assurance voyage (n° de contrat noté)','Photocopies des papiers (rangées à part)','Papiers scannés dans le Coffre de l’app 😏','Photos d’identité de secours','CB principale','CB de secours (autre banque)','Espèces en euros','Devises locales (un peu, le reste sur place)','Petite monnaie (toilettes, pourboires)','Portefeuille de voyage (pas celui de tous les jours)','Pochette tour de cou pour papiers','Numéros d’opposition CB notés sur papier','Cartes de réduction (étudiant, famille…)','Carte de fidélité compagnie / hôtel','Justificatif de domicile (location de voiture)','Attestation mutuelle / assistance','Contact de l’ambassade noté quelque part'],
+  electronique: ['Téléphone (oui, ça arrive de l’oublier)','Chargeur téléphone','Câble de rechange','Batterie externe','Deuxième batterie externe (les photos, ça pompe)','Multiprise (1 seule prise à l’hôtel, toujours)','Rallonge courte','Adaptateur universel','Écouteurs filaires (pour l’avion)','Casque / écouteurs bluetooth','Chargeur de la montre connectée (LE grand oublié)','Montre connectée','Liseuse','Chargeur de liseuse','Tablette pour le trajet','Appareil photo','Batterie d’appareil photo chargée','Carte SD de rechange','Perche à selfie / mini trépied','Caméra type GoPro + fixations','Clé USB (partager les photos)','Lampe de poche','Chargeur allume-cigare','Support téléphone voiture','Câble long 2 m (prise loin du lit)','Piles de rechange','AirTag / traceur dans la valise','Films et séries téléchargés AVANT de partir'],
+  toilette: ['Brosse à dents','Dentifrice','Fil dentaire','Bain de bouche format mini','Gel douche format voyage','Savon solide (zéro souci de liquides)','Shampoing solide ou mini','Après-shampoing','Déodorant','Parfum format mini','Crème visage','Crème hydratante corps','Baume à lèvres','Rasoir','Mousse ou gel à raser','Après-rasage','Tondeuse + chargeur','Brosse ou peigne','Élastiques à cheveux','Pinces / barrettes','Sèche-cheveux de voyage (vérifie si l’hôtel en a)','Lisseur / boucleur','Coton-tiges réutilisables','Disques démaquillants','Démaquillant','Coupe-ongles','Lime à ongles','Pince à épiler','Petits ciseaux (EN SOUTE uniquement)','Miroir de poche','Mouchoirs en paquets','Lingettes bébé (ça nettoie TOUT)','Gel hydroalcoolique','Protections hygiéniques / cup','Trousse suspendable (salle de bain minuscule)','Bonnet de douche','Boules Quies de piscine','Cotons','Maquillage de base','Crème solaire visage quotidienne'],
+  pharmacie: ['Doliprane / paracétamol','Ibuprofène','Smecta / anti-diarrhéique','Solution de réhydratation','Anti-nauséeux','Médicament mal des transports','Antihistaminique (allergies surprises)','Collyre / gouttes pour les yeux','Sérum physiologique','Pansements toutes tailles','Pansements anti-ampoules (20 km/jour en voyage…)','Désinfectant','Compresses stériles','Sparadrap','Bande de contention','Pince à tiques','Thermomètre','Arnica','Gel anti-inflammatoire','Anti-moustique peau','Stick apaisant après-piqûre','Crème cortisone (piqûres qui gonflent)','Pastilles pour la gorge','Spray nasal','Préservatifs','Traitements perso + ordonnances','Vitamines / magnésium','Probiotiques (prévention tourista)','Masques chirurgicaux (2-3)','Mélatonine (décalage horaire)','Pansement gastrique','Laxatif doux (le transit voyage mal)','Crème pour les pieds','Épingles à nourrice','Trousse compacte pour tout ranger'],
+  vetements: ['Sous-vêtements (nb de jours + 2)','Chaussettes (nb de jours + 2)','T-shirts','Chemises / tops','Pantalon confortable','Jean','Short','Jupe / robe','Une tenue habillée (resto, soirée)','Ceinture','Pyjama','Sweat / hoodie','Gilet / cardigan','Veste selon saison','Baskets confortables (rodées, PAS neuves !)','Chaussures habillées','Claquettes (douche, hôtel)','Tenue de sport','Legging','Maillot de bain (piscine ou spa d’hôtel, sait-on jamais)','Chapeau ou casquette','Foulard / bandana','Lunettes de soleil','Lunettes de vue + étui','Lunettes de vue de secours','Montre','Bijoux discrets (pas les précieux)','Sac à linge sale','Kit couture mini','Lacets de rechange','Semelles de rechange','Désodorisant chaussures','Cintres pliables (improbable mais pratique)','Poncho de pluie','Parapluie pliable'],
+  transport: ['Coussin de voyage','Masque de nuit','Bouchons d’oreilles (ronfleur du groupe inclus)','Plaid ou grosse écharpe (la clim des transports)','Gourde VIDE (à remplir après la sécurité aéroport)','Snacks pour le trajet','Chewing-gums (oreilles qui se bouchent)','Bas de contention (long courrier)','Grosses chaussettes d’avion','Livre','Magazines','Mots croisés / sudoku','Jeu de cartes (l’apéro, la base)','Petit jeu de société de voyage','Playlist et podcasts hors-ligne','Étiquette bagage avec tes coordonnées','Sangle de valise colorée (repérage sur le tapis)','Housse de valise','Pèse-bagage (le retour avec les souvenirs…)','Cadenas TSA','Sac cabine aux normes vérifié','Une tenue de rechange dans le bagage CABINE (valise perdue = sauvé)','Oreiller gonflable de sieste','Lingettes rafraîchissantes','Organiseurs de valise / packing cubes'],
+  divers: ['Sacs zip toutes tailles','Sacs poubelle (chaussures sales, linge mouillé)','Tote bag pliable','Sac à dos pliable supplémentaire','Mini rouleau de scotch / duct tape (répare TOUT)','Ficelle / paracorde','Mousquetons','Cadenas à code','Câble antivol','Sifflet','Lampe frontale','Couteau suisse (EN SOUTE !)','Tire-bouchon (EN SOUTE, l’apéro mérite mieux qu’un échec)','Décapsuleur porte-clés','Gobelets pliables','Couverts de voyage réutilisables','Boîte hermétique pliable','Pailles réutilisables','Lessive en feuilles (laver un t-shirt dans le lavabo)','Corde à linge de voyage','Pinces à linge','Éponge coupée en deux (improbable, indispensable)','Papier toilette de secours (le VRAI malin)','Stylos x2 (ils disparaissent)','Carnet de notes','Marqueur permanent','Post-it (improbable)','Trombones','Élastiques larges','Grandes épingles à nourrice','Chausse-pied de voyage (improbable 😄)','Jumelles compactes','Boussole porte-clés (improbable)','Couverture de survie (3€, zéro place)','Poncho jetable de secours','Housse imperméable pour sac à dos','Pochette anti-pickpocket (les grandes villes, ça pique)','Ceinture à billets cachée','Fausse pochette leurre (niveau agent secret)','Répertoire papier des contacts importants'],
+  apero: ['Saucisson pour la route (évidemment)','Fromage sous vide (UE seulement, la douane rigole pas)','Biscuits apéro','Chips pour le trajet','Chocolat (pas en plein été hein)','Fruits secs','Barres de céréales','Café soluble ou dosettes','Thé / tisanes','Sucre en morceaux','Mini sel et poivre','Cure-dents','Verres réutilisables','Planche à saucisson de voyage (improbable mais iconique)','Opinel (EN SOUTE, le saucisson se coupe pas tout seul)','Bouteille pour l’apéro d’arrivée (EN SOUTE)','Sirop / pastis mini (EN SOUTE, ambiance)','Nappe / plaid de pique-nique'],
+  chaud: ['Crème solaire indice 50','Crème solaire waterproof','Après-soleil / aloé vera (le coup de soleil arrive TOUJOURS)','Stick à lèvres SPF','Casquette','Bob assumé','Chapeau de paille','Éventail (canicule dans le métro, merci)','Brumisateur','Ventilateur USB de poche','Ventilateur de cou (improbable mais tu me remercieras)','T-shirt anti-UV','Chemise en lin','Débardeurs','Robe légère','Sarong / paréo multi-usage','Shorts légers','Sandales de marche','Tongs','Stick anti-frottements (marcher par 35°C…)','Talc','Sels de réhydratation','Glacière souple','Pains de glace','Moustiquaire de voyage (improbable)','Prise anti-moustique','Spray anti-moustique spécial vêtements','Bracelets anti-moustiques','Serviette rafraîchissante','Lunettes de soleil de secours','Cordon attache-lunettes','Gourde isotherme','Casquette de rechange (le vent, tout ça)','Pare-soleil voiture','Housse de siège anti-transpiration (improbable 😂)','Chapeau pliable dans le sac','Vêtements clairs (le noir en août, non)','Pyjama léger','Drap léger de sieste','Spray solaire cuir chevelu (la raie qui brûle, on connaît)'],
+  doux: ['Veste mi-saison','K-way','Parapluie solide','Pull chaud','Pull léger','Écharpe légère (terrasses le soir)','Pantalon léger en plus du jean','T-shirts manches longues','Chaussettes un peu chaudes','Bonnet léger (au cas où)','Gants fins (au cas où)','Lunettes de soleil de mi-saison (ça tape en traître)','Crème solaire légère','Chaussures imperméables','Baskets de rechange (une averse et hop)','Sous-pull','Chemise chaude / flanelle','Gilet sans manches','Tenue superposable (chaud à midi, froid le soir)','Poncho pluie de secours','Housse pluie pour le sac','Chaussettes de rechange dans le sac de jour','Thermos de café','Stick à lèvres','Crème mains légère','Cape de pluie pour deux (improbable, romantique)','Coupe-vent','Sweat à capuche','Écharpe tube / buff','Chapeau de pluie (improbable)','Sur-chaussures imperméables (improbable++)','Chaussettes en laine fine','Débardeur (si ça chauffe)','Short (optimisme)','Deuxième maillot (optimisme thermal)','Gilet polaire léger','Pantalon convertible en short (improbable mais légendaire)','Serviette microfibre','Mini parapluie de secours','Appli météo consultée la veille 😄'],
+  froid: ['Manteau chaud / parka','Doudoune compressible','Bonnet','Gants chauds','Gants tactiles (utiliser le tel sans se geler)','Écharpe épaisse','Cache-cou / buff polaire','Pulls en laine (superposition)','Sous-pull thermique','Collants thermiques (même pour les mecs, personne ne le saura)','Chaussettes chaudes (plusieurs paires)','Chaussettes en laine mérinos','Bottes ou chaussures fourrées','Semelles thermiques','Chaufferettes mains','Chaufferettes pieds','Baume à lèvres réparateur','Crème mains réparatrice','Crème visage barrière anti-froid','Thermos (café chaud en balade)','Lunettes de soleil (la neige éblouit, si si)','Pyjama polaire','Chaussons de voyage','Plaid de voyage','Bonnet de rechange (perdu = drame)','Legging sous le jean (technique de grand-mère validée)','Coupe-vent par-dessus tout','Pantalon imperméable','Tour de cou chauffant (improbable)','Chauffe-mains USB rechargeable (improbable++)','Gilet chauffant (niveau boss final)','Mouchoirs en stock (le nez qui coule non-stop)','Vaseline pour le nez','Chocolat chaud instantané','Soupe instantanée','Gants de rechange','Écharpe de rechange','Couverture polaire compacte','Bouillotte de voyage (improbable, génial)','Crampons antidérapants pour verglas (attends de glisser)','Spray imperméabilisant chaussures','Sac pour chaussures mouillées','Papier journal (sécher les chaussures, astuce de vieux)','Lampe frontale (il fait nuit à 16h)','Vitamine D 😄'],
+  glacial: ['Doudoune grand froid expédition','Sous-vêtements thermiques haut + bas','Sur-moufles par-dessus les gants','Cagoule / passe-montagne','Masque de ski (même sans skier, le vent arctique pique)','Chaussettes chauffantes (improbable niveau astronaute)','Bottes grand froid -20°C','Guêtres neige','Pantalon de ski','Combinaison thermique','Crème visage spécial grand froid','Batteries gardées au chaud près du corps (le froid les vide !)','Thermos GRAND format','Stock de chaufferettes (x10)','Lunettes catégorie 4'],
+  plage: ['Deuxième maillot (un qui sèche, un que tu portes)','Serviette de plage grande','Serviette microfibre séchage rapide','Drap de plage XXL pour le groupe','Parasol pliable','Tente anti-UV de plage (improbable)','Tapis anti-sable (improbable, magique)','Sac étanche pour le téléphone','Pochette étanche de cou (CB + clés à la baignade)','Sac de plage ajouré anti-sable','Raquettes de plage (ambiance)','Ballon gonflable','Bouée ou frite (assume)','Masque + tuba','Chaussures d’eau (oursins, galets)','Palmes courtes','Jeux de plage','Enceinte bluetooth (étanche de préférence)','Glacière de plage','Poche à glaçons','Livre de plage','Liseuse (mieux que le tel au soleil)','Lunettes de soleil flottantes (improbable)','Cordon flottant pour lunettes','Cendrier de poche (plage propre)','Sacs poubelle pour la plage','Sardines / piquets pour le parasol','Filet pour fruits et jeux','Après-shampoing démêlant (sel + cheveux = nœuds)','Peigne démêlant','Brassard étanche téléphone','Paréo de secours'],
+  ville: ['Chaussures de marche rodées','Banane ou sac ventral','Sac zippé anti-vol','Petit cadenas de sac','City-pass / billets musées réservés','Guide de voyage','Plan papier (batterie morte = sauvé)','Traduction hors-ligne téléchargée','Plans hors-ligne téléchargés','Monnaie pour consignes et casiers','Tenue chic pour resto / rooftop','Chaussures propres pour sortir','Mini parapluie de sac','Gilet léger (la clim des musées)','Pochette ceinture passeport','Écouteurs pour audio-guides','Carnet de voyage souvenir','Appareil photo compact','Gourde (les fontaines c’est gratuit)','Lingettes pour les mains (street food)'],
+  montagne: ['Chaussures de rando montantes','Chaussettes de rando','Sous-couche technique','Polaire','Veste imperméable respirante','Surpantalon de pluie','Guêtres (improbable)','Bâtons de marche pliables','Sac à dos 20-30L','Poche à eau','Gourde filtrante','Pastilles de purification d’eau','Barres énergétiques','Fruits secs de rando','Couteau multifonction (EN SOUTE)','Boussole','Carte IGN du coin','Trace GPS téléchargée','Sifflet de secours','Couverture de survie rando','Trousse premiers secours rando','Lampe frontale + piles de rechange','Crème solaire montagne','Stick lèvres SPF montagne','Lunettes catégorie 3-4','Bandana','Gants légers','Bonnet léger de rando','Jumelles','Bulletin météo montagne consulté']
 };
 
 /* ---------- IndexedDB ---------- */
@@ -802,23 +812,54 @@ function climateFor(t){
   else c = summer ? 'froid' : 'glacial'; // arctic
   return { climate: c, why: d.n + ' en ' + MOIS_FR[month-1] };
 }
+function matchSpots(t, list){
+  var txt = ' ' + normTxt((t.dest||'') + ' ' + (t.country||'')) + ' ';
+  for(var i=0;i<list.length;i++) if(txt.indexOf(list[i]) !== -1) return true;
+  return false;
+}
 function applyValise(climate, why){
   var t = getTrip(currentTripId);
   if(!t.checklist) t.checklist = [];
-  var items = VALISE.base.concat(VALISE[climate] || []);
-  (t.types || []).forEach(function(ty){ items = items.concat(VALISE[ty] || []); });
+  var types = (t.types || []).slice();
+  var auto = [];
+  // d\u00E9tection auto : ville c\u00F4ti\u00E8re quand il fait bon = plage
+  if(types.indexOf('plage') === -1 && matchSpots(t, BEACH_SPOTS) && (climate === 'chaud' || climate === 'doux')){
+    types.push('plage'); auto.push('\uD83C\uDFD6\uFE0F plage d\u00E9tect\u00E9e');
+  }
+  if(types.indexOf('montagne') === -1 && matchSpots(t, MOUNTAIN_SPOTS)){
+    types.push('montagne'); auto.push('\uD83C\uDFD4\uFE0F montagne d\u00E9tect\u00E9e');
+  }
+  // pas de plage ni montagne d\u00E9tect\u00E9e ? c\u2019est un s\u00E9jour ville
+  if(!types.length){ types.push('ville'); auto.push('\uD83C\uDFD9\uFE0F mode ville'); }
+  var CLIM_CAT = { chaud:'\u2600\uFE0F Sp\u00E9cial chaud', doux:'\uD83C\uDF24\uFE0F Mi-saison', froid:'\uD83E\uDDE3 Sp\u00E9cial froid', glacial:'\u2744\uFE0F Grand froid' };
+  var TYPE_CAT = { plage:'\uD83C\uDFD6\uFE0F Plage', ville:'\uD83C\uDFD9\uFE0F Ville', montagne:'\uD83C\uDFD4\uFE0F Montagne' };
+  var packs = [
+    ['\uD83E\uDEAA Papiers & argent', VALISE.papiers],
+    ['\uD83D\uDD0C \u00C9lectronique', VALISE.electronique],
+    ['\uD83E\uDDF4 Toilette', VALISE.toilette],
+    ['\uD83D\uDC8A Pharmacie', VALISE.pharmacie],
+    ['\uD83D\uDC55 V\u00EAtements', VALISE.vetements],
+    ['\uD83D\uDECB\uFE0F Trajet & confort', VALISE.transport],
+    ['\uD83E\uDDF0 Malin & divers', VALISE.divers],
+    ['\uD83C\uDF56 Ap\u00E9ro & gourmand', VALISE.apero]
+  ];
+  if(climate === 'glacial') packs.push([CLIM_CAT.froid, VALISE.froid]);
+  packs.push([CLIM_CAT[climate], VALISE[climate] || []]);
+  types.forEach(function(ty){ packs.push([TYPE_CAT[ty], VALISE[ty] || []]); });
   var existing = t.checklist.map(function(c){ return c.lbl.toLowerCase(); });
   var added = 0;
-  items.forEach(function(it){
-    if(existing.indexOf(it.toLowerCase()) === -1){
-      t.checklist.push({ id: uid(), lbl: it, done: false });
-      existing.push(it.toLowerCase());
-      added++;
-    }
+  packs.forEach(function(pk){
+    pk[1].forEach(function(it){
+      if(existing.indexOf(it.toLowerCase()) === -1){
+        t.checklist.push({ id: uid(), lbl: it, done: false, cat: pk[0] });
+        existing.push(it.toLowerCase());
+        added++;
+      }
+    });
   });
   saveState().then(function(){
     renderChecklist(t);
-    toast('Valise ' + CLIMAT_LBL[climate] + (why ? ' \u2014 ' + why : '') + ' (' + added + ' ajouts)');
+    toast('Valise ' + CLIMAT_LBL[climate] + (why ? ' \u2014 ' + why : '') + (auto.length ? ' + ' + auto.join(' + ') : '') + ' (' + added + ' ajouts)');
   });
 }
 function smartValise(){
@@ -1442,14 +1483,35 @@ function renderChecklist(t){
     box.innerHTML = '<div class="empty"><span class="big">\uD83E\uDDF3</span>Valise vide (pour l\u2019instant).</div>';
     return;
   }
+  var groups = [], gmap = {};
   t.checklist.forEach(function(c){
-    var el = document.createElement('div');
-    el.className = 'check' + (c.done ? ' done' : '');
-    el.dataset.check = c.id;
-    el.innerHTML = '<div class="box">' + (c.done ? '\u2713' : '') + '</div>' +
-      '<div class="lbl">' + esc(c.lbl) + '</div>' +
-      '<button class="del" data-delcheck="' + c.id + '" aria-label="Supprimer">\u2715</button>';
-    box.appendChild(el);
+    var g = c.cat || '\u270D\uFE0F Perso';
+    if(!gmap[g]){ gmap[g] = []; groups.push(g); }
+    gmap[g].push(c);
+  });
+  var totDone = t.checklist.filter(function(c){ return c.done; }).length;
+  var head = document.createElement('div');
+  head.className = 'countdown';
+  head.style.marginTop = '0';
+  head.innerHTML = '\uD83E\uDDF3 <b>' + totDone + ' / ' + t.checklist.length + '</b>&nbsp;dans la valise';
+  box.appendChild(head);
+  groups.forEach(function(g){
+    var arr = gmap[g];
+    var gd = arr.filter(function(c){ return c.done; }).length;
+    var h = document.createElement('div');
+    h.className = 'doc-cat-h';
+    h.style.margin = '16px 0 8px';
+    h.textContent = g + ' \u00B7 ' + gd + '/' + arr.length;
+    box.appendChild(h);
+    arr.forEach(function(c){
+      var el = document.createElement('div');
+      el.className = 'check' + (c.done ? ' done' : '');
+      el.dataset.check = c.id;
+      el.innerHTML = '<div class="box">' + (c.done ? '\u2713' : '') + '</div>' +
+        '<div class="lbl">' + esc(c.lbl) + '</div>' +
+        '<button class="del" data-delcheck="' + c.id + '" aria-label="Supprimer">\u2715</button>';
+      box.appendChild(el);
+    });
   });
 }
 
@@ -1905,6 +1967,13 @@ function bind(){
   $('btn-addcheck').addEventListener('click', addCheckItem);
   $('check-input').addEventListener('keydown', function(e){ if(e.key === 'Enter') addCheckItem(); });
   $('btn-preset').addEventListener('click', smartValise);
+  $('btn-clearvalise').addEventListener('click', function(){
+    var t = getTrip(currentTripId);
+    if(!t.checklist || !t.checklist.length) return;
+    if(!confirm('Vider compl\u00E8tement la valise (' + t.checklist.length + ' items) ?')) return;
+    t.checklist = [];
+    saveState().then(function(){ renderChecklist(t); toast('Valise vid\u00E9e \uD83E\uDDF9'); });
+  });
   var climChips = document.querySelectorAll('[data-climat]');
   for(var cc=0;cc<climChips.length;cc++) climChips[cc].addEventListener('click', function(){
     closeSheet('ov-climat');
@@ -1916,7 +1985,7 @@ function addCheckItem(){
   if(!v) return;
   var t = getTrip(currentTripId);
   if(!t.checklist) t.checklist = [];
-  t.checklist.push({ id: uid(), lbl: v, done: false });
+  t.checklist.push({ id: uid(), lbl: v, done: false, cat: '\u270D\uFE0F Perso' });
   $('check-input').value = '';
   saveState().then(function(){ renderChecklist(t); });
 }
