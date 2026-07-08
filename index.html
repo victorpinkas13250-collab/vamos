@@ -360,7 +360,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div style="color:var(--muted)">&#8250;</div>
   </div>
 
-  <footer>Travel Time v1.8.0 &middot; données stockées sur cet appareil</footer>
+  <footer>Travel Time v1.8.1 &middot; données stockées sur cet appareil</footer>
   <button class="fab" id="fab-home" aria-label="Nouveau voyage">+</button>
 </div>
 
@@ -739,7 +739,7 @@ var BASE_PACKS = [
 ];
 var QBAG = [ ['cabine','\uD83C\uDF92 Cabine seulement'], ['soute','\uD83E\uDDF3 Valise en soute'], ['voiture','\uD83D\uDE97 Coffre de voiture'] ];
 var QHEB = [ ['hotel','\uD83C\uDFE8 H\u00F4tel'], ['location','\uD83C\uDFE0 Location / Airbnb'], ['autre','\u26FA Autre'] ];
-var QSTYLE = [ ['mini','\uD83E\uDEB6 Minimaliste'], ['equilibre','\u2696\uFE0F \u00C9quilibr\u00E9'], ['prevoyant','\uD83E\uDDF0 Pr\u00E9voyant (tout !)'] ];
+var QSTYLE = [ ['mini','\uD83E\uDEB6 Essentiel (~100)'], ['equilibre','\u2696\uFE0F \u00C9quilibr\u00E9 (~200)'], ['prevoyant','\uD83E\uDDF0 Full tonton (tout !)'] ];
 var HOTEL_DROPS = ['s\u00E8che-cheveux','corde \u00E0 linge','pinces \u00E0 linge','papier toilette de secours','\u00E9ponge coup\u00E9e'];
 function quizFilter(t, lbl, cat){
   var l = lbl.toLowerCase();
@@ -766,7 +766,7 @@ var VALISE = {
   doux: ['Veste mi-saison','K-way','Parapluie solide','Pull chaud','Pull léger','Écharpe légère (terrasses le soir)','Pantalon léger en plus du jean','T-shirts manches longues','Chaussettes un peu chaudes','Bonnet léger (au cas où)','Gants fins (au cas où)','Lunettes de soleil de mi-saison (ça tape en traître)','Crème solaire légère','Chaussures imperméables','Baskets de rechange (une averse et hop)','Sous-pull','Chemise chaude / flanelle','Gilet sans manches','Tenue superposable (chaud à midi, froid le soir)','Poncho pluie de secours','Housse pluie pour le sac','Chaussettes de rechange dans le sac de jour','Thermos de café','Stick à lèvres','Crème mains légère','Cape de pluie pour deux (improbable, romantique)','Coupe-vent','Sweat à capuche','Écharpe tube / buff','Chapeau de pluie (improbable)','Sur-chaussures imperméables (improbable++)','Chaussettes en laine fine','Débardeur (si ça chauffe)','Short (optimisme)','Deuxième maillot (optimisme thermal)','Gilet polaire léger','Pantalon convertible en short (improbable mais légendaire)','Serviette microfibre','Mini parapluie de secours','Appli météo consultée la veille 😄'],
   froid: ['Manteau chaud / parka','Doudoune compressible','Bonnet','Gants chauds','Gants tactiles (utiliser le tel sans se geler)','Écharpe épaisse','Cache-cou / buff polaire','Pulls en laine (superposition)','Sous-pull thermique','Collants thermiques (même pour les mecs, personne ne le saura)','Chaussettes chaudes (plusieurs paires)','Chaussettes en laine mérinos','Bottes ou chaussures fourrées','Semelles thermiques','Chaufferettes mains','Chaufferettes pieds','Baume à lèvres réparateur','Crème mains réparatrice','Crème visage barrière anti-froid','Thermos (café chaud en balade)','Lunettes de soleil (la neige éblouit, si si)','Pyjama polaire','Chaussons de voyage','Plaid de voyage','Bonnet de rechange (perdu = drame)','Legging sous le jean (technique de grand-mère validée)','Coupe-vent par-dessus tout','Pantalon imperméable','Tour de cou chauffant (improbable)','Chauffe-mains USB rechargeable (improbable++)','Gilet chauffant (niveau boss final)','Mouchoirs en stock (le nez qui coule non-stop)','Vaseline pour le nez','Chocolat chaud instantané','Soupe instantanée','Gants de rechange','Écharpe de rechange','Couverture polaire compacte','Bouillotte de voyage (improbable, génial)','Crampons antidérapants pour verglas (attends de glisser)','Spray imperméabilisant chaussures','Sac pour chaussures mouillées','Papier journal (sécher les chaussures, astuce de vieux)','Lampe frontale (il fait nuit à 16h)','Vitamine D 😄'],
   glacial: ['Doudoune grand froid expédition','Sous-vêtements thermiques haut + bas','Sur-moufles par-dessus les gants','Cagoule / passe-montagne','Masque de ski (même sans skier, le vent arctique pique)','Chaussettes chauffantes (improbable niveau astronaute)','Bottes grand froid -20°C','Guêtres neige','Pantalon de ski','Combinaison thermique','Crème visage spécial grand froid','Batteries gardées au chaud près du corps (le froid les vide !)','Thermos GRAND format','Stock de chaufferettes (x10)','Lunettes catégorie 4'],
-  plage: ['Deuxième maillot (un qui sèche, un que tu portes)','Serviette de plage grande','Serviette microfibre séchage rapide','Drap de plage XXL pour le groupe','Parasol pliable','Tente anti-UV de plage (improbable)','Tapis anti-sable (improbable, magique)','Sac étanche pour le téléphone','Pochette étanche de cou (CB + clés à la baignade)','Sac de plage ajouré anti-sable','Raquettes de plage (ambiance)','Ballon gonflable','Bouée ou frite (assume)','Masque + tuba','Chaussures d’eau (oursins, galets)','Palmes courtes','Jeux de plage','Enceinte bluetooth (étanche de préférence)','Glacière de plage','Poche à glaçons','Livre de plage','Liseuse (mieux que le tel au soleil)','Lunettes de soleil flottantes (improbable)','Cordon flottant pour lunettes','Cendrier de poche (plage propre)','Sacs poubelle pour la plage','Sardines / piquets pour le parasol','Filet pour fruits et jeux','Après-shampoing démêlant (sel + cheveux = nœuds)','Peigne démêlant','Brassard étanche téléphone','Paréo de secours'],
+  plage: ['Maillot de bain (le principal, quand même !)','Serviette de plage grande','Deuxième maillot (un qui sèche, un que tu portes)','Serviette microfibre séchage rapide','Drap de plage XXL pour le groupe','Parasol pliable','Tente anti-UV de plage (improbable)','Tapis anti-sable (improbable, magique)','Sac étanche pour le téléphone','Pochette étanche de cou (CB + clés à la baignade)','Sac de plage ajouré anti-sable','Raquettes de plage (ambiance)','Ballon gonflable','Bouée ou frite (assume)','Masque + tuba','Chaussures d’eau (oursins, galets)','Palmes courtes','Jeux de plage','Enceinte bluetooth (étanche de préférence)','Glacière de plage','Poche à glaçons','Livre de plage','Liseuse (mieux que le tel au soleil)','Lunettes de soleil flottantes (improbable)','Cordon flottant pour lunettes','Cendrier de poche (plage propre)','Sacs poubelle pour la plage','Sardines / piquets pour le parasol','Filet pour fruits et jeux','Après-shampoing démêlant (sel + cheveux = nœuds)','Peigne démêlant','Brassard étanche téléphone','Paréo de secours'],
   ville: ['Chaussures de marche rodées','Banane ou sac ventral','Sac zippé anti-vol','Petit cadenas de sac','City-pass / billets musées réservés','Guide de voyage','Plan papier (batterie morte = sauvé)','Traduction hors-ligne téléchargée','Plans hors-ligne téléchargés','Monnaie pour consignes et casiers','Tenue chic pour resto / rooftop','Chaussures propres pour sortir','Mini parapluie de sac','Gilet léger (la clim des musées)','Pochette ceinture passeport','Écouteurs pour audio-guides','Carnet de voyage souvenir','Appareil photo compact','Gourde (les fontaines c’est gratuit)','Lingettes pour les mains (street food)'],
   montagne: ['Chaussures de rando montantes','Chaussettes de rando','Sous-couche technique','Polaire','Veste imperméable respirante','Surpantalon de pluie','Guêtres (improbable)','Bâtons de marche pliables','Sac à dos 20-30L','Poche à eau','Gourde filtrante','Pastilles de purification d’eau','Barres énergétiques','Fruits secs de rando','Couteau multifonction (EN SOUTE)','Boussole','Carte IGN du coin','Trace GPS téléchargée','Sifflet de secours','Couverture de survie rando','Trousse premiers secours rando','Lampe frontale + piles de rechange','Crème solaire montagne','Stick lèvres SPF montagne','Lunettes catégorie 3-4','Bandana','Gants légers','Bonnet léger de rando','Jumelles','Bulletin météo montagne consulté']
 };
@@ -908,10 +908,15 @@ function applyValise(climate, why){
   (t.acts || []).forEach(function(aid){
     ACTS.forEach(function(a){ if(a.id === aid) packs.push([a.l, a.items]); });
   });
+  // chaque cat\u00E9gorie est class\u00E9e du plus essentiel au plus improbable :
+  // le style prend le haut du panier (30% / 60% / 100%)
+  var style = t.qstyle || 'equilibre';
+  var ratio = style === 'mini' ? 0.3 : (style === 'prevoyant' ? 1 : 0.6);
   var existing = t.checklist.map(function(c){ return c.lbl.toLowerCase(); });
   var added = 0;
   packs.forEach(function(pk){
-    pk[1].forEach(function(it){
+    var take = Math.max(3, Math.ceil(pk[1].length * ratio));
+    pk[1].slice(0, take).forEach(function(it){
       if(quizFilter(t, it, pk[0]) && existing.indexOf(it.toLowerCase()) === -1){
         t.checklist.push({ id: uid(), lbl: it, done: false, cat: pk[0] });
         existing.push(it.toLowerCase());
