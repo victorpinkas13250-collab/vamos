@@ -360,7 +360,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div style="color:var(--muted)">&#8250;</div>
   </div>
 
-  <footer>Travel Time v1.8.1 &middot; données stockées sur cet appareil</footer>
+  <footer>Travel Time v1.9.1 &middot; données stockées sur cet appareil</footer>
   <button class="fab" id="fab-home" aria-label="Nouveau voyage">+</button>
 </div>
 
@@ -527,6 +527,15 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <button class="btn" id="btn-save-step">Enregistrer</button>
     </div>
     <button class="btn danger full" id="btn-del-step" style="margin-top:10px;display:none">Supprimer cette étape</button>
+  </div>
+</div>
+
+<div class="overlay" id="ov-pickdoc">
+  <div class="sheet">
+    <div class="grip"></div>
+    <h3>&#127915; Quel billet ?</h3>
+    <div id="pickdoc-list"></div>
+    <div class="sheet-actions"><button class="btn ghost full" data-close="ov-pickdoc">Annuler</button></div>
   </div>
 </div>
 
@@ -1151,12 +1160,14 @@ function renderItiInner(t, dmap){
       (s.docs || []).forEach(function(did){
         if(dmap[did]) dl += '<span class="doclink" data-viewdoc="' + did + '">\uD83C\uDF9F\uFE0F ' + esc(dmap[did].nom) + '</span>';
       });
+      var hasDocs = (s.docs || []).some(function(did){ return !!dmap[did]; });
       html += '<div class="step" data-editstep="' + day + '|' + s.id + '">' +
               '<div class="step-time">' + (s.time || '\u2014') + '</div>' +
               '<div class="step-body"><div class="step-txt">' + (s.type ? s.type + ' ' : '') + esc(s.txt) + '</div>' +
               (who ? '<div class="step-who"><span class="dot" style="background:' + who.color + '"></span>' + esc(who.name) + '</div>' : '') +
               (dl ? '<div class="doclinks">' + dl + '</div>' : '') +
               '</div>' +
+              (hasDocs ? '<button class="del" data-editbtn="' + day + '|' + s.id + '" aria-label="Modifier" style="color:var(--teal)">\u270E</button>' : '') +
               '<button class="del" data-delstep="' + day + '|' + s.id + '" aria-label="Supprimer">\u2715</button></div>';
     });
     html += '</div>';
@@ -1168,19 +1179,28 @@ function renderItiInner(t, dmap){
   pdfBtn.className = 'btn ghost full';
   pdfBtn.dataset.pdf = '1';
   pdfBtn.style.marginTop = '4px';
-  pdfBtn.textContent = '\uD83D\uDCC4 Partager l\u2019itin\u00E9raire en PDF';
+  pdfBtn.textContent = '\uD83D\uDCC4 Dossier PDF complet (itin\u00E9raire + billets)';
   pane.appendChild(pdfBtn);
 }
 
-/* ---------- Export PDF de l'itin\u00E9raire ---------- */
-function loadJsPDF(){
+/* ---------- Export PDF : dossier de voyage complet ---------- */
+function loadScript(src){
   return new Promise(function(res, rej){
-    if(window.jspdf && window.jspdf.jsPDF){ res(); return; }
     var s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.src = src;
     s.onload = function(){ res(); };
     s.onerror = function(){ rej(new Error('cdn')); };
     document.head.appendChild(s);
+  });
+}
+function loadJsPDF(){
+  if(window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+  return loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+}
+function loadPdfJs(){
+  if(window.pdfjsLib) return Promise.resolve();
+  return loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js').then(function(){
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   });
 }
 function pdfSan(s){
@@ -1190,66 +1210,248 @@ function pdfSan(s){
     .replace(/[\u2300-\u27BF\u2B00-\u2BFF\u2100-\u214F]/g,'')
     .replace(/\s+/g,' ').trim();
 }
+function blobToDataURL(blob){
+  return new Promise(function(res, rej){
+    var r = new FileReader();
+    r.onload = function(){ res(r.result); };
+    r.onerror = function(){ rej(r.error); };
+    r.readAsDataURL(blob);
+  });
+}
+function dataUrlDims(url){
+  return new Promise(function(res, rej){
+    var img = new Image();
+    img.onload = function(){ res({ w: img.width, h: img.height }); };
+    img.onerror = function(){ rej(new Error('img')); };
+    img.src = url;
+  });
+}
+function renderPdfFirstPage(blob){
+  return blob.arrayBuffer().then(function(buf){
+    return window.pdfjsLib.getDocument({ data: buf }).promise;
+  }).then(function(pdf){
+    return pdf.getPage(1);
+  }).then(function(page){
+    var vp1 = page.getViewport({ scale: 1 });
+    var scale = Math.min(2.2, 1400 / vp1.width);
+    var vp = page.getViewport({ scale: scale });
+    var c = document.createElement('canvas');
+    c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    return page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function(){
+      return c.toDataURL('image/jpeg', 0.85);
+    });
+  });
+}
+function pdfSectionTitle(doc, txt, Y){
+  if(Y.y > 255){ doc.addPage(); Y.y = 20; }
+  doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  doc.setTextColor(61,143,209);
+  doc.text(txt, 14, Y.y);
+  doc.setDrawColor(38,172,166); doc.setLineWidth(1);
+  doc.line(14, Y.y + 2.5, 14 + doc.getTextWidth(txt), Y.y + 2.5);
+  doc.setLineWidth(0.2);
+  Y.y += 12;
+}
+function pdfCover(doc, t, d){
+  // fond
+  doc.setFillColor(38,172,166); doc.rect(0, 0, 210, 116, 'F');
+  doc.setFillColor(61,143,209); doc.triangle(0, 116, 210, 116, 210, 94, 'F');
+  // marque
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold'); doc.setFontSize(11);
+  doc.text('T R A V E L   T I M E', 14, 20);
+  doc.setDrawColor(255,255,255); doc.setLineDashPattern([2,2],0);
+  doc.line(14, 25, 196, 25);
+  doc.setLineDashPattern([],0);
+  // titre
+  doc.setFontSize(32);
+  var lines = doc.splitTextToSize(pdfSan(t.name) || 'Mon voyage', 180);
+  doc.text(lines, 14, 52);
+  var ty = 52 + lines.length * 12;
+  doc.setFont('helvetica','normal'); doc.setFontSize(14);
+  doc.text(pdfSan((t.dest||'') + (t.country ? ', ' + t.country : '')), 14, ty);
+  if(t.start){
+    doc.setFontSize(12);
+    doc.text('Du ' + fmtDateLong(t.start) + (t.end ? ' au ' + fmtDateLong(t.end) : ''), 14, ty + 8);
+  }
+  var y = 134;
+  // voyageurs
+  if(t.people && t.people.length){
+    doc.setTextColor(125,150,158); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text('LES VOYAGEURS', 14, y); y += 7;
+    doc.setFontSize(12);
+    var x = 16;
+    t.people.forEach(function(p){
+      var nm = pdfSan(p.name);
+      var w = doc.getTextWidth(nm) + 12;
+      if(x + w > 196){ x = 16; y += 9; }
+      var rgb = [38,172,166];
+      try {
+        var hex = (p.color||'#26ACA6').replace('#','');
+        rgb = [parseInt(hex.slice(0,2),16), parseInt(hex.slice(2,4),16), parseInt(hex.slice(4,6),16)];
+      } catch(e){}
+      doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+      doc.circle(x, y - 1.4, 2.4, 'F');
+      doc.setTextColor(22,50,60); doc.setFont('helvetica','normal');
+      doc.text(nm, x + 5, y);
+      x += w + 6;
+    });
+    y += 14;
+  }
+  // fiche pays
+  if(d){
+    var rows = [
+      ['Papiers', d.d], ['Monnaie', d.m], ['Conduite', d.c === 'D' ? 'A droite' : d.c],
+      ['Urgences', d.e], ['Eau du robinet', d.w ? 'Potable' : 'En bouteille de preference']
+    ];
+    var cardH = rows.length * 8 + 14;
+    doc.setFillColor(242,249,250); doc.setDrawColor(220,235,238);
+    doc.roundedRect(14, y, 182, cardH, 3, 3, 'FD');
+    doc.setTextColor(38,172,166); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('KIT DE SURVIE  -  ' + pdfSan(d.n).toUpperCase(), 20, y + 9);
+    var ry = y + 17;
+    rows.forEach(function(r){
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(125,150,158);
+      doc.text(pdfSan(r[0]), 20, ry);
+      doc.setFont('helvetica','normal'); doc.setTextColor(22,50,60);
+      doc.text(doc.splitTextToSize(pdfSan(r[1]), 130), 58, ry);
+      ry += 8;
+    });
+    y += cardH + 10;
+  }
+  // pied de couverture
+  doc.setDrawColor(188,216,221); doc.setLineDashPattern([2,2],0);
+  doc.line(14, 280, 196, 280);
+  doc.setLineDashPattern([],0);
+  doc.setTextColor(125,150,158); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text('Dossier genere avec Travel Time  -  ' + new Date().toLocaleDateString('fr-FR'), 105, 287, { align:'center' });
+}
+function pdfItinerary(doc, t, days, dmap, Y){
+  pdfSectionTitle(doc, 'ITINERAIRE', Y);
+  days.forEach(function(day, i){
+    if(Y.y > 262){ doc.addPage(); Y.y = 20; }
+    // bandeau jour
+    doc.setFillColor(38,172,166);
+    doc.roundedRect(14, Y.y - 5.5, 182, 8.5, 2, 2, 'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('JOUR ' + (i+1) + '  -  ' + pdfSan(fmtDateLong(day)).toUpperCase(), 18, Y.y);
+    Y.y += 10;
+    var steps = (t.steps && t.steps[day] ? t.steps[day] : []).slice().sort(function(a,b){ return (a.time||'99') < (b.time||'99') ? -1 : 1; });
+    if(!steps.length){
+      doc.setTextColor(125,150,158); doc.setFont('helvetica','italic'); doc.setFontSize(11);
+      doc.text('Journee libre - improvisation totale', 20, Y.y);
+      Y.y += 10;
+      return;
+    }
+    steps.forEach(function(s, idx){
+      var who = personOf(t, s.who);
+      var tickets = (s.docs || []).map(function(did){ return dmap[did] ? pdfSan(dmap[did].nom) : null; }).filter(Boolean);
+      var lines = doc.splitTextToSize(pdfSan(s.txt), 138);
+      var rowH = lines.length * 5.2 + (who ? 4.5 : 0) + (tickets.length ? 4.5 : 0) + 5;
+      if(Y.y + rowH > 284){ doc.addPage(); Y.y = 20; }
+      if(idx % 2 === 0){
+        doc.setFillColor(242,249,250);
+        doc.rect(14, Y.y - 4.2, 182, rowH, 'F');
+      }
+      doc.setTextColor(61,143,209); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+      doc.text(s.time || '--:--', 18, Y.y);
+      doc.setTextColor(22,50,60); doc.setFont('helvetica','normal');
+      doc.text(lines, 40, Y.y);
+      var yy = Y.y + lines.length * 5.2;
+      if(who){
+        doc.setTextColor(125,150,158); doc.setFont('helvetica','italic'); doc.setFontSize(9.5);
+        doc.text('par ' + pdfSan(who.name), 40, yy);
+        yy += 4.5;
+      }
+      if(tickets.length){
+        doc.setTextColor(38,172,166); doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+        doc.text(doc.splitTextToSize('Billet joint : ' + tickets.join(' - '), 150), 40, yy);
+      }
+      Y.y += rowH;
+    });
+    Y.y += 5;
+  });
+}
+function pdfAddDoc(doc, d, Y){
+  var task;
+  if(d.type.indexOf('image') === 0) task = blobToDataURL(d.blob);
+  else if(d.type === 'application/pdf' && window.pdfjsLib) task = renderPdfFirstPage(d.blob);
+  else task = Promise.resolve(null);
+  return task.catch(function(){ return null; }).then(function(url){
+    if(Y.y > 235){ doc.addPage(); Y.y = 20; }
+    doc.setTextColor(22,50,60); doc.setFont('helvetica','bold'); doc.setFontSize(12.5);
+    doc.text(pdfSan(d.nom), 14, Y.y);
+    doc.setTextColor(125,150,158); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.text(pdfSan(CATS[d.cat].lbl) + '  -  ' + (d.type === 'application/pdf' ? 'PDF (page 1)' : 'Photo'), 14, Y.y + 5);
+    Y.y += 10;
+    if(!url){
+      doc.setTextColor(38,172,166); doc.setFont('helvetica','italic'); doc.setFontSize(10);
+      doc.text('Document non integrable ici - ouvre-le depuis l appli.', 14, Y.y);
+      Y.y += 12;
+      return;
+    }
+    return dataUrlDims(url).then(function(dim){
+      var maxW = 176;
+      var avail = 280 - Y.y;
+      var w = maxW, h = w * dim.h / dim.w;
+      if(h > avail && avail < 110){ doc.addPage(); Y.y = 20; avail = 260; }
+      if(h > avail){ h = avail; w = h * dim.w / dim.h; }
+      var fmt = url.indexOf('image/png') !== -1 ? 'PNG' : 'JPEG';
+      doc.setDrawColor(220,235,238);
+      doc.roundedRect(13, Y.y - 1, w + 2, h + 2, 2, 2, 'D');
+      doc.addImage(url, fmt, 14, Y.y, w, h);
+      Y.y += h + 14;
+    }).catch(function(){
+      doc.setTextColor(38,172,166); doc.setFontSize(10);
+      doc.text('Apercu indisponible - document dans l appli.', 14, Y.y);
+      Y.y += 12;
+    });
+  });
+}
 function exportPdf(){
   var t = getTrip(currentTripId);
   var days = dayList(t);
   if(!days.length){ toast('Ajoute des dates au voyage d\u2019abord \uD83D\uDCC5'); return; }
-  toast('Pr\u00E9paration du PDF\u2026');
+  toast('Pr\u00E9paration du dossier PDF\u2026');
+  var tripDocs = [];
   loadJsPDF().then(function(){
+    return allDocs();
+  }).then(function(docs){
+    tripDocs = docs.filter(function(d){ return d.tripId === t.id; });
+    var order = ['transport','hebergement','activite','identite','autre'];
+    tripDocs.sort(function(a,b){ return order.indexOf(a.cat) - order.indexOf(b.cat); });
+    var needPdfjs = tripDocs.some(function(d){ return d.type === 'application/pdf'; });
+    return needPdfjs ? loadPdfJs().catch(function(){}) : null;
+  }).then(function(){
     var J = window.jspdf.jsPDF;
     var doc = new J({ unit:'mm', format:'a4' });
-    var W = 210, y;
-    // bandeau
-    doc.setFillColor(38,172,166);
-    doc.rect(0,0,W,32,'F');
-    doc.setTextColor(255,255,255);
-    doc.setFont('helvetica','bold'); doc.setFontSize(21);
-    doc.text(pdfSan(t.name) || 'Mon voyage', 14, 14);
-    doc.setFont('helvetica','normal'); doc.setFontSize(11);
-    var sub = pdfSan((t.dest||'') + (t.country ? ', ' + t.country : ''));
-    if(t.start) sub += (sub ? '  |  ' : '') + fmtDate(t.start) + (t.end ? ' - ' + fmtDate(t.end) : '');
-    doc.text(sub, 14, 22);
-    if(t.people && t.people.length){
-      doc.text(pdfSan('Avec : ' + t.people.map(function(p){ return p.name; }).join(', ')), 14, 28);
-    }
-    y = 42;
-    doc.setTextColor(22,50,60);
-    days.forEach(function(day, i){
-      var steps = (t.steps && t.steps[day] ? t.steps[day] : []).slice().sort(function(a,b){ return (a.time||'99') < (b.time||'99') ? -1 : 1; });
-      if(y > 265){ doc.addPage(); y = 20; }
-      doc.setFont('helvetica','bold'); doc.setFontSize(13);
-      doc.setTextColor(38,172,166);
-      doc.text('Jour ' + (i+1) + '  -  ' + pdfSan(fmtDateLong(day)), 14, y);
-      doc.setDrawColor(220,235,238);
-      doc.line(14, y+2, W-14, y+2);
-      y += 8;
-      doc.setTextColor(22,50,60); doc.setFontSize(11);
-      if(!steps.length){
-        doc.setFont('helvetica','italic');
-        doc.text('Journ\u00E9e libre', 20, y); y += 7;
-      }
-      steps.forEach(function(s){
-        if(y > 275){ doc.addPage(); y = 20; }
-        doc.setFont('helvetica','bold');
-        doc.text(s.time || '--:--', 16, y);
-        doc.setFont('helvetica','normal');
-        var who = personOf(t, s.who);
-        var txt = pdfSan(s.txt) + (who ? '  (' + pdfSan(who.name) + ')' : '');
-        var lines = doc.splitTextToSize(txt, 158);
-        doc.text(lines, 34, y);
-        y += lines.length * 5.4 + 2.2;
+    var d = findDest(t);
+    var dmap = {};
+    tripDocs.forEach(function(x){ dmap[x.id] = x; });
+    pdfCover(doc, t, d);
+    doc.addPage();
+    var Y = { y: 22 };
+    pdfItinerary(doc, t, days, dmap, Y);
+    var chain = Promise.resolve();
+    if(tripDocs.length){
+      chain = chain.then(function(){
+        doc.addPage(); Y.y = 22;
+        pdfSectionTitle(doc, 'BILLETS & DOCUMENTS', Y);
       });
-      y += 4;
-    });
-    // pied de page
+      tripDocs.forEach(function(dd){
+        chain = chain.then(function(){ return pdfAddDoc(doc, dd, Y); });
+      });
+    }
+    return chain.then(function(){ return doc; });
+  }).then(function(doc){
     var pages = doc.getNumberOfPages();
-    for(var p=1;p<=pages;p++){
+    for(var p = 2; p <= pages; p++){
       doc.setPage(p);
       doc.setFontSize(8); doc.setTextColor(140,160,168);
       doc.setFont('helvetica','normal');
-      doc.text('Travel Time  -  page ' + p + '/' + pages, W/2, 291, { align:'center' });
+      doc.text(pdfSan(t.name) + '  -  Travel Time  -  ' + p + '/' + pages, 105, 291, { align:'center' });
     }
-    var fname = 'itineraire-' + (t.name||'voyage').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') + '.pdf';
+    var fname = 'voyage-' + (t.name||'dossier').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') + '.pdf';
     var blob = doc.output('blob');
     try {
       var file = new File([blob], fname, { type:'application/pdf' });
@@ -1309,6 +1511,28 @@ function buildWhoChips(t){
       buildWhoChips(t);
     });
     row.appendChild(b);
+  });
+}
+function openPickDoc(ids){
+  allDocs().then(function(docs){
+    var box = $('pickdoc-list'); box.innerHTML = '';
+    ids.forEach(function(id){
+      var d = null;
+      docs.forEach(function(x){ if(x.id === id) d = x; });
+      if(!d) return;
+      var el = document.createElement('div');
+      el.className = 'doc'; el.dataset.doc = d.id;
+      var ico;
+      if(d.type.indexOf('image') === 0 && d.thumb) ico = '<img src="' + d.thumb + '" alt="">';
+      else if(d.type === 'application/pdf') ico = '\uD83D\uDCD5';
+      else ico = '\uD83C\uDF9F\uFE0F';
+      el.innerHTML = '<div class="doc-ico">' + ico + '</div>' +
+        '<div class="doc-info"><div class="doc-name">' + esc(d.nom) + '</div>' +
+        '<div class="doc-meta">' + (d.type === 'application/pdf' ? 'PDF' : 'Image') + '</div></div>' +
+        '<div style="color:var(--muted)">\u203A</div>';
+      box.appendChild(el);
+    });
+    openSheet('ov-pickdoc');
   });
 }
 function buildStepDocChips(){
@@ -1839,6 +2063,7 @@ function saveDocForm(){
 
 /* ---------- Documents : consultation ---------- */
 function openDocView(id){
+  closeSheet('ov-pickdoc');
   getDoc(id).then(function(d){
     if(!d) return;
     viewingDocId = id;
@@ -2046,13 +2271,26 @@ function bind(){
       }
       return;
     }
+    var editBtn = e.target.closest('[data-editbtn]');
+    if(editBtn){
+      var pe = editBtn.dataset.editbtn.split('|');
+      var te = getTrip(currentTripId);
+      var fe = null;
+      (te.steps[pe[0]] || []).forEach(function(s){ if(s.id === pe[1]) fe = s; });
+      if(fe) openStepForm(pe[0], fe);
+      return;
+    }
     var editStep = e.target.closest('[data-editstep]');
     if(editStep){
       var p2 = editStep.dataset.editstep.split('|');
       var t4 = getTrip(currentTripId);
       var found = null;
       (t4.steps[p2[0]] || []).forEach(function(s){ if(s.id === p2[1]) found = s; });
-      if(found) openStepForm(p2[0], found);
+      if(!found) return;
+      var ids = found.docs || [];
+      if(ids.length === 1) openDocView(ids[0]);
+      else if(ids.length > 1) openPickDoc(ids);
+      else openStepForm(p2[0], found);
       return;
     }
     var packBtn = e.target.closest('[data-addpack]');
